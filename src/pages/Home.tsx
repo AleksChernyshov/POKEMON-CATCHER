@@ -1,10 +1,4 @@
-import React, {
-  useState,
-  KeyboardEvent,
-  ChangeEvent,
-  useEffect,
-  useRef,
-} from 'react'
+import React, { useState, KeyboardEvent, ChangeEvent, useEffect, useRef } from 'react'
 import { useQuery } from '@apollo/client'
 import { GET_POKEMON_LIST } from '../graphql/queries'
 import { SearchInput, Suggestion } from '../components/SearchInput'
@@ -21,23 +15,22 @@ interface PokemonListVars {
 }
 
 const Home: React.FC = () => {
-  const [searchTerm, setSearchTerm]   = useState('')
-  const [isFocused, setIsFocused]     = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [isFocused, setIsFocused] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
-  const [selected, setSelected]       = useState<Suggestion | null>(null)
+  const [selected, setSelected] = useState<Suggestion | null>(null)
 
   const { data: listData, loading: listLoading } = useQuery<
     PokemonListData,
     PokemonListVars
   >(GET_POKEMON_LIST, { variables: { limit: 251, offset: 0 } })
 
-  const addPokemon = usePokemonStore((s) => s.addPokemon)
+  const addPokemon = usePokemonStore(s => s.addPokemon)
 
-  const lower       = searchTerm.trim().toLowerCase()
+  const lower = searchTerm.trim().toLowerCase()
   const suggestions =
     listData?.pokemons.results.filter(
-      (p) =>
-        p.name.toLowerCase().includes(lower) && p.name.toLowerCase() !== lower
+      p => p.name.toLowerCase().includes(lower) && p.name.toLowerCase() !== lower
     ) ?? []
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -55,37 +48,37 @@ const Home: React.FC = () => {
 
   const containerRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    const clickOutside = (e: MouseEvent) => {
+    const outside = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node))
         setShowSuggestions(false)
     }
-    document.addEventListener('mousedown', clickOutside)
-    return () => document.removeEventListener('mousedown', clickOutside)
+    document.addEventListener('mousedown', outside)
+    return () => document.removeEventListener('mousedown', outside)
   }, [])
 
   return (
     <div className="flex h-full items-start justify-center pt-20 px-4">
       <div ref={containerRef} className="container mx-auto text-center max-w-3xl">
-        <h1 className="text-5xl font-bold text-accent-yellow mb-12">
-          Pokémon Catcher
-        </h1>
+        <h1 className="text-5xl font-bold text-accent-yellow mb-12">Pokémon Catcher</h1>
 
-        <SearchInput
-          searchTerm={searchTerm}
-          isFocused={isFocused}
-          showSuggestions={showSuggestions}
-          listLoading={listLoading}
-          suggestions={suggestions}
-          loading={false}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-          onSelect={(name) => {
-            const picked = suggestions.find((p) => p.name === name)
-            if (picked) handleSelect(picked)
-          }}
-        />
+        <div className="mx-auto max-w-md">
+          <SearchInput
+            searchTerm={searchTerm}
+            isFocused={isFocused}
+            showSuggestions={showSuggestions}
+            listLoading={listLoading}
+            suggestions={suggestions}
+            loading={false}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            onSelect={name => {
+              const picked = suggestions.find(p => p.name === name)
+              if (picked) handleSelect(picked)
+            }}
+          />
+        </div>
 
         {selected && (
           <CatchModal

@@ -8,28 +8,40 @@ import { EvolutionModal } from './EvolutionModal'
 export const PokedexViewer: React.FC = () => {
   const caught = usePokemonStore(s => s.caught)
   const removeOne = usePokemonStore(s => s.removeOne)
+
   const [idx, setIdx] = useState(0)
   const [power, setPower] = useState(false)
   const [showAll, setShowAll] = useState(false)
   const [showEvo, setShowEvo] = useState(false)
+
   const modalRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!showAll) return
-    const outside = (e: MouseEvent) => { if (modalRef.current && !modalRef.current.contains(e.target as Node)) setShowAll(false) }
+    const outside = (e: MouseEvent) => {
+      if (modalRef.current && !modalRef.current.contains(e.target as Node)) setShowAll(false)
+    }
     document.addEventListener('mousedown', outside)
     return () => document.removeEventListener('mousedown', outside)
   }, [showAll])
 
   const hasPokemon = caught.length > 0
   const current: CaughtEntry | null = hasPokemon ? caught[idx] : null
+
   const prev = () => { if (power && hasPokemon) setIdx(i => (i === 0 ? caught.length - 1 : i - 1)) }
   const next = () => { if (power && hasPokemon) setIdx(i => (i === caught.length - 1 ? 0 : i + 1)) }
+
   const disabled = power && hasPokemon ? '' : 'pointer-events-none opacity-40'
+
+  const handleEvoDown = () => { if (power && hasPokemon) setShowEvo(true) }
+  const handleEvoUp   = () => setShowEvo(false)
 
   return (
     <>
-      <div className="relative mx-auto mt-12 w-[512px] h-[512px] select-none" style={{ backgroundImage: `url(${pokedexImg})`, backgroundSize: 'contain', backgroundRepeat: 'no-repeat' }}>
+      <div
+        className="relative mx-auto mt-12 w-[512px] h-[512px] select-none"
+        style={{ backgroundImage: `url(${pokedexImg})`, backgroundSize: 'contain', backgroundRepeat: 'no-repeat' }}
+      >
         {power && (
           <>
             {current && (
@@ -67,8 +79,13 @@ export const PokedexViewer: React.FC = () => {
         </div>
 
         <div className="absolute left-[191px] bottom-[108px] flex flex-col items-center gap-1 w-[30px] h-[45px]">
-          <button onClick={() => power && hasPokemon && setShowEvo(true)} className={`group relative w-[34px] h-[18px] cursor-pointer ${disabled}`}>
-            <span className={`absolute inset-0 rounded-lg border-2 border-transparent transition-colors duration-50 ${power && hasPokemon && 'group-hover:shadow-[0_0_6px_2px_rgba(255,255,0,0.8)] group-active:border-yellow-400'}`} />
+          <button
+            onMouseDown={handleEvoDown}
+            onMouseUp={handleEvoUp}
+            onMouseLeave={handleEvoUp}
+            className={`group relative w-[34px] h-[18px] rounded-lg cursor-pointer ${disabled}`}
+          >
+            <span className={`absolute inset-0 rounded-lg border-2 border-transparent transition-colors duration-50 ${power && hasPokemon && 'group-hover:shadow-[0_0_6px_2px_rgba(255,255,0,0.4)] group-active:shadow-[0_0_6px_2px_rgba(255,255,0,0.8)] group-active:border-yellow-400'}`} />
           </button>
           <span className="text-[12px] font-bold text-gray-800 select-none">evo</span>
         </div>
@@ -84,14 +101,18 @@ export const PokedexViewer: React.FC = () => {
       {showAll && hasPokemon && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 px-4">
           <div ref={modalRef} className="relative container mx-auto max-w-3xl bg-bg-secondary p-6 rounded-2xl max-h-[80vh] overflow-auto">
-            <button onClick={() => setShowAll(false)} className="absolute top-2 right-2 flex h-7 w-7 items-start justify-center rounded-full text-xl text-red-600 transition hover:bg-red-600 hover:text-white pt-[2px]">×</button>
+            <button onClick={() => setShowAll(false)} className="absolute top-2 right-2 flex h-7 w-7 items-start justify-center rounded-full text-3xl text-red-600 transition hover:bg-red-600 hover:text-white ">×</button>
             <h2 className="mb-6 text-center text-2xl text-accent-yellow">All Caught Pokémon</h2>
             <CaughtList />
           </div>
         </div>
       )}
 
-      {showEvo && hasPokemon && <EvolutionModal name={current!.name} onClose={() => setShowEvo(false)} />}
+      {showEvo && hasPokemon && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+          <EvolutionModal name={current!.name} />
+        </div>
+      )}
     </>
   )
 }

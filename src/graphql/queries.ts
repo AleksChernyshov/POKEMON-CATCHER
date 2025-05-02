@@ -14,7 +14,7 @@ export const GET_POKEMON_BY_NAME = gql`
       id
       name
       sprites { front_default }
-      species { url }          # ← url понадобится, чтобы узнать id цепочки
+      species { url }
     }
   }
 `

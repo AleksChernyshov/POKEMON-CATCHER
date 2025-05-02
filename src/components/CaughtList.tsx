@@ -15,7 +15,7 @@ export const CaughtList: React.FC = () => {
           className="relative w-full max-w-[300px] p-5 border-2 border-accent-yellow rounded-lg bg-bg-secondary"
         >
           {p.count > 1 && (
-            <span className="absolute top-[10px] left-2 rounded-full bg-accent-yellow px-2 pt-[4px] pb-[2px] text-xs font-bold text-black shadow">
+            <span className="absolute top-[10px] left-2 rounded-full bg-accent-yellow px-2 pt-[6px] pb-[2px] text-sm font-bold text-black shadow">
               ×{p.count}
             </span>
           )}
@@ -23,7 +23,7 @@ export const CaughtList: React.FC = () => {
           <button
             onClick={() => removeOne(p.id)}
             aria-label="Remove one"
-            className="absolute top-2 right-2 flex h-7 w-7 items-start justify-center rounded-full text-xl text-red-600 transition hover:bg-red-600 hover:text-white pt-[2px]"
+            className="absolute top-2 right-2 flex h-7 w-7 items-start justify-center rounded-full text-xl text-red-600 transition hover:bg-red-600 hover:text-white pt-[3px]"
           >
             ×
           </button>
