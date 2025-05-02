@@ -1,4 +1,3 @@
-// src/hooks/useCatchPokemon.ts
 import { useCallback } from 'react'
 import { Pokemon } from '../store/pokemonStore'
 

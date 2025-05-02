@@ -1,4 +1,3 @@
-// src/store/pokemonStore.ts
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
@@ -6,7 +5,7 @@ export interface Pokemon {
   id: number
   name: string
   sprites: { front_default: string }
-  species: { url: string }                    // ← добавлено
+  species: { url: string }
 }
 
 export interface CaughtEntry extends Pokemon {

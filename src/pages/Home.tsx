@@ -1,4 +1,3 @@
-// src/pages/Home.tsx
 import React, {
   useState,
   KeyboardEvent,
@@ -11,7 +10,7 @@ import { GET_POKEMON_LIST } from '../graphql/queries'
 import { SearchInput, Suggestion } from '../components/SearchInput'
 import { CatchModal } from '../components/CatchModal'
 import { usePokemonStore } from '../store/pokemonStore'
-import { CaughtList } from '../components/CaughtList'
+import { PokedexViewer } from '../components/PokedexViewer'
 
 interface PokemonListData {
   pokemons: { results: Suggestion[] }
@@ -66,7 +65,7 @@ const Home: React.FC = () => {
 
   return (
     <div className="flex h-full items-start justify-center pt-20 px-4">
-      <div ref={containerRef} className="container mx-auto text-center max-w-md">
+      <div ref={containerRef} className="container mx-auto text-center max-w-3xl">
         <h1 className="text-5xl font-bold text-accent-yellow mb-12">
           Pokémon Catcher
         </h1>
@@ -92,11 +91,11 @@ const Home: React.FC = () => {
           <CatchModal
             name={selected.name}
             onClose={() => setSelected(null)}
-            onCaught={(poke, stage) => addPokemon(poke, stage)}
+            onCaught={addPokemon}
           />
         )}
 
-        <CaughtList />
+        <PokedexViewer />
       </div>
     </div>
   )

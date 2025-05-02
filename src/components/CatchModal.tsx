@@ -1,4 +1,3 @@
-// src/components/CatchModal.tsx
 import React, { useState, useEffect } from 'react'
 import { useApolloClient } from '@apollo/client'
 import { GET_POKEMON_BY_NAME } from '../graphql/queries'
