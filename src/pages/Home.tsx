@@ -5,6 +5,7 @@ import { SearchInput, Suggestion } from '../components/SearchInput'
 import { CatchModal } from '../components/CatchModal'
 import { usePokemonStore } from '../store/pokemonStore'
 import { PokedexViewer } from '../components/PokedexViewer'
+import pikaGif from '../assets/pika.gif';
 
 interface PokemonListData {
   pokemons: { results: Suggestion[] }
@@ -87,6 +88,12 @@ const Home: React.FC = () => {
             onCaught={addPokemon}
           />
         )}
+
+        <img
+          src={pikaGif}
+          alt="Pikachu"
+          className="absolute bottom-0 left-0 w-[200px]"
+        />
 
         <PokedexViewer />
       </div>

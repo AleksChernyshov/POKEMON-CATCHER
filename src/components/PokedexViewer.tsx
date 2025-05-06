@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import pokedexImg from '../assets/pokedex.png';
 import onOffIcon from '../assets/on-off.png';
+// import hologramImg from '../assets/hologram.png';
 import { usePokemonStore, CaughtEntry } from '../store/pokemonStore';
 import { CaughtList } from './CaughtList';
 import { EvolutionModal } from './EvolutionModal';
@@ -15,8 +16,11 @@ export const PokedexViewer: React.FC = () => {
   const [showAll, setShowAll] = useState(false);
   const [showEvo, setShowEvo] = useState(false);
   const [hint, setHint] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
 
   const modalRef = useRef<HTMLDivElement>(null);
+  const dragStartRef = useRef({ x: 0, y: 0 });
 
   const powerOnSound = new Howl({ src: ['/POKEMON-CATCHER/assets/power-on.mp3'] });
   const powerOffSound = new Howl({ src: ['/POKEMON-CATCHER/assets/power-off.mp3'] });
@@ -56,12 +60,42 @@ export const PokedexViewer: React.FC = () => {
     });
   };
 
+  const startDragging = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    dragStartRef.current = { x: e.clientX - position.x, y: e.clientY - position.y };
+  };
+
+  const stopDragging = () => setIsDragging(false);
+
+  const drag = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    const x = e.clientX - dragStartRef.current.x;
+    const y = e.clientY - dragStartRef.current.y;
+    setPosition({ x, y });
+  };
+
   return (
     <>
       <div
         className="relative mx-auto mt-12 w-[512px] h-[512px] select-none"
-        style={{ backgroundImage: `url(${pokedexImg})`, backgroundSize: 'contain', backgroundRepeat: 'no-repeat' }}
+        style={{
+          backgroundImage: `url(${pokedexImg})`,
+          backgroundSize: 'contain',
+          backgroundRepeat: 'no-repeat',
+          left: `${position.x}px`,
+          top: `${position.y}px`,
+          zIndex: 50,
+        }}
+        onMouseDown={startDragging}
+        onMouseUp={stopDragging}
+        onMouseMove={drag}
       >
+        {/* <img
+          src={hologramImg}
+          alt="Hologram"
+          className="absolute -left-[177px] -top-[278px] w-[1200px] h-[400px] z-10"
+        /> */}
+
         {power && (
           <>
             {cur && (
@@ -179,7 +213,7 @@ export const PokedexViewer: React.FC = () => {
               onClick={() => setShowAll(false)}
               className="absolute top-2 right-2 flex h-7 w-7 items-start justify-center rounded-full text-xl text-red-600 transition hover:bg-red-600 hover:text-white pt-[2px]"
             >
-              ×
+              x
             </button>
             <h2 className="mb-6 text-center text-2xl text-accent-yellow">All Caught Pokémon</h2>
             <CaughtList />

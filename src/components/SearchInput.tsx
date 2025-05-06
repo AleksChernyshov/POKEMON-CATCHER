@@ -3,6 +3,7 @@ import React, {
    ChangeEvent,
    useRef,
    useEffect,
+   useState,
  } from 'react'
  import pokeball from '../assets/pokeball.png'
  import particles from '../assets/particles_bg.png'
@@ -81,11 +82,11 @@ import React, {
    onSelect,
  }) => {
    const containerRef = useRef<HTMLDivElement>(null)
-   const [phase, setPhase] = React.useState<Phase>('left')
-   const [duration, setDuration] = React.useState(0)
-   const [enableT, setEnableT] = React.useState(false)
+   const [phase, setPhase] = useState<Phase>('left')
+   const [duration, setDuration] = useState(0)
+   const [enableT, setEnableT] = useState(false)
  
-   React.useEffect(() => {
+   useEffect(() => {
      if (isFocused) {
        setEnableT(false)
        setDuration(0)
@@ -182,7 +183,7 @@ import React, {
                  type="rotate"
                  from="0 32 32"
                  to="360 32 32"
-                 dur="0.6s"
+                 dur="0.3s"
                  repeatCount="indefinite"
                />
              </image>
