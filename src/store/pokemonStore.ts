@@ -15,6 +15,7 @@ export interface CaughtEntry extends Pokemon {
 
 interface PokemonStore {
   caught: CaughtEntry[]
+  lastCaughtId: number | null
   addPokemon: (p: Pokemon, stage: number) => void
   removeOne: (id: number) => void
   clearAll: () => void
@@ -22,32 +23,40 @@ interface PokemonStore {
 
 export const usePokemonStore = create<PokemonStore>()(
   persist(
-    (set) => ({
+    set => ({
       caught: [],
+      lastCaughtId: null,
+
       addPokemon: (p, stage) =>
-        set((s) => {
-          const ex = s.caught.find((c) => c.id === p.id)
-          return ex
-            ? {
-                caught: s.caught.map((c) =>
-                  c.id === p.id ? { ...c, count: c.count + 1 } : c
-                ),
-              }
-            : { caught: [...s.caught, { ...p, count: 1, stage }] }
-        }),
-      removeOne: (id) =>
-        set((s) => {
-          const e = s.caught.find((c) => c.id === id)
-          if (!e) return s
-          if (e.count > 1)
+        set(s => {
+          const ex = s.caught.find(c => c.id === p.id)
+          if (ex) {
+            const updated: CaughtEntry = { ...ex, count: ex.count + 1 }
             return {
-              caught: s.caught.map((c) =>
-                c.id === id ? { ...c, count: c.count - 1 } : c
-              ),
+              caught: [...s.caught.filter(c => c.id !== p.id), updated],
+              lastCaughtId: p.id
             }
-          return { caught: s.caught.filter((c) => c.id !== id) }
+          }
+          return {
+            caught: [...s.caught, { ...p, count: 1, stage }],
+            lastCaughtId: p.id
+          }
         }),
-      clearAll: () => set({ caught: [] }),
+
+      removeOne: id =>
+        set(s => {
+          const ex = s.caught.find(c => c.id === id)
+          if (!ex) return s
+          if (ex.count > 1)
+            return {
+              caught: s.caught.map(c =>
+                c.id === id ? { ...c, count: c.count - 1 } : c
+              )
+            }
+          return { caught: s.caught.filter(c => c.id !== id) }
+        }),
+
+      clearAll: () => set({ caught: [], lastCaughtId: null })
     }),
     { name: 'pokemon-storage-v2' }
   )

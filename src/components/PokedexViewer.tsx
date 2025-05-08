@@ -1,79 +1,99 @@
-import React, { useState, useRef, useEffect } from 'react';
-import pokedexImg from '../assets/pokedex.png';
-import onOffIcon from '../assets/on-off.png';
-import { usePokemonStore, CaughtEntry } from '../store/pokemonStore';
-import { CaughtList } from './CaughtList';
-import { EvolutionModal } from './EvolutionModal';
-import { Howl } from 'howler';
+import React, { useState, useRef, useEffect } from 'react'
+import pokedexImg from '../assets/pokedex.png'
+import onOffIcon from '../assets/on-off.png'
+import { usePokemonStore, CaughtEntry } from '../store/pokemonStore'
+import { CaughtList } from './CaughtList'
+import { EvolutionModal } from './EvolutionModal'
+import { Howl } from 'howler'
 
 export const PokedexViewer: React.FC = () => {
-  const caught = usePokemonStore(s => s.caught);
-  const removeOne = usePokemonStore(s => s.removeOne);
+  const caught     = usePokemonStore(s => s.caught)
+  const removeOne  = usePokemonStore(s => s.removeOne)
 
-  const [idx, setIdx] = useState(0);
-  const [power, setPower] = useState(false);
-  const [showAll, setShowAll] = useState(false);
-  const [showEvo, setShowEvo] = useState(false);
-  const [hint, setHint] = useState('');
-  const [isDragging, setIsDragging] = useState(false);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [idx, setIdx]             = useState(0)
+  const [power, setPower]         = useState(false)
+  const [showAll, setShowAll]     = useState(false)
+  const [showEvo, setShowEvo]     = useState(false)
+  const [hint, setHint]           = useState('')
+  const [isDragging, setDragging] = useState(false)
+  const [pos, setPos]             = useState({ x: 0, y: 0 })
 
-  const modalRef = useRef<HTMLDivElement>(null);
-  const dragStartRef = useRef({ x: 0, y: 0 });
+  const modalRef     = useRef<HTMLDivElement>(null)
+  const dragStartRef = useRef({ x: 0, y: 0 })
+  const prevLen      = useRef(0)
 
-  const powerOnSound = new Howl({ src: ['/POKEMON-CATCHER/assets/power-on.mp3'] });
-  const powerOffSound = new Howl({ src: ['/POKEMON-CATCHER/assets/power-off.mp3'] });
-  const buttonClickSound = new Howl({ src: ['/POKEMON-CATCHER/assets/button.mp3'] });
+  const powerOnSound     = new Howl({ src: ['/POKEMON-CATCHER/assets/power-on.mp3'] })
+  const powerOffSound    = new Howl({ src: ['/POKEMON-CATCHER/assets/power-off.mp3'] })
+  const buttonClickSound = new Howl({ src: ['/POKEMON-CATCHER/assets/button.mp3'] })
 
   useEffect(() => {
-    if (!showAll) return;
+    if (!showAll) return
     const outside = (e: MouseEvent) => {
-      if (modalRef.current && !modalRef.current.contains(e.target as Node)) setShowAll(false);
-    };
-    document.addEventListener('mousedown', outside);
-    return () => document.removeEventListener('mousedown', outside);
-  }, [showAll]);
+      if (modalRef.current && !modalRef.current.contains(e.target as Node)) setShowAll(false)
+    }
+    document.addEventListener('mousedown', outside)
+    return () => document.removeEventListener('mousedown', outside)
+  }, [showAll])
 
-  const has = caught.length > 0;
-  const cur: CaughtEntry | null = has ? caught[idx] : null;
+  useEffect(() => {
+    if (caught.length > prevLen.current) setIdx(caught.length - 1)
+    prevLen.current = caught.length
+  }, [caught.length])
 
-  const prev = () => { if (power && has) { setIdx(i => (i ? i - 1 : caught.length - 1)); buttonClickSound.play(); } };
-  const next = () => { if (power && has) { setIdx(i => (i === caught.length - 1 ? 0 : i + 1)); buttonClickSound.play(); } };
-  const disabled = power && has ? '' : 'pointer-events-none opacity-40';
+  const has = caught.length > 0
+  const cur: CaughtEntry | null = has ? caught[idx] : null
 
-  const hintIn = (t: string) => () => setHint(t);
-  const hintOut = () => setHint('');
+  const prev = () => {
+    if (power && has) {
+      setIdx(i => (i ? i - 1 : caught.length - 1))
+      buttonClickSound.play()
+    }
+  }
+  const next = () => {
+    if (power && has) {
+      setIdx(i => (i === caught.length - 1 ? 0 : i + 1))
+      buttonClickSound.play()
+    }
+  }
+  const disabled = power && has ? '' : 'pointer-events-none opacity-40'
 
-  const evoDown = () => { if (power && has) { setShowEvo(true); setHint('SHOW EVO'); buttonClickSound.play(); } };
-  const evoUp = () => { setShowEvo(false); setHint(''); };
+  const hintIn  = (t: string) => () => setHint(t)
+  const hintOut = () => setHint('')
+
+  const evoDown = () => {
+    if (power && has) {
+      setShowEvo(true)
+      setHint('SHOW EVO')
+      buttonClickSound.play()
+    }
+  }
+  const evoUp = () => {
+    setShowEvo(false)
+    setHint('')
+  }
 
   const togglePower = () => {
     setPower(p => {
-      const newPower = !p;
-      if (newPower) {
-        powerOnSound.play();
-      } else {
-        powerOffSound.play();
-      }
-      return newPower;
-    });
-  };
+      const n = !p
+      if (n) powerOnSound.play()
+      else   powerOffSound.play()
+      return n
+    })
+  }
 
   const startDragging = (e: React.MouseEvent | React.TouchEvent) => {
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-    setIsDragging(true);
-    dragStartRef.current = { x: clientX - position.x, y: clientY - position.y };
-  };
-
-  const stopDragging = () => setIsDragging(false);
-
+    const cX = 'touches' in e ? e.touches[0].clientX : e.clientX
+    const cY = 'touches' in e ? e.touches[0].clientY : e.clientY
+    setDragging(true)
+    dragStartRef.current = { x: cX - pos.x, y: cY - pos.y }
+  }
+  const stopDragging = () => setDragging(false)
   const drag = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!isDragging) return;
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-    setPosition({ x: clientX - dragStartRef.current.x, y: clientY - dragStartRef.current.y });
-  };
+    if (!isDragging) return
+    const cX = 'touches' in e ? e.touches[0].clientX : e.clientX
+    const cY = 'touches' in e ? e.touches[0].clientY : e.clientY
+    setPos({ x: cX - dragStartRef.current.x, y: cY - dragStartRef.current.y })
+  }
 
   return (
     <>
@@ -83,8 +103,8 @@ export const PokedexViewer: React.FC = () => {
           backgroundImage: `url(${pokedexImg})`,
           backgroundSize: 'contain',
           backgroundRepeat: 'no-repeat',
-          left: `${position.x}px`,
-          top: `${position.y}px`,
+          left: `${pos.x}px`,
+          top:  `${pos.y}px`,
           zIndex: 20,
         }}
         onMouseDown={startDragging}
@@ -94,28 +114,24 @@ export const PokedexViewer: React.FC = () => {
         onTouchEnd={stopDragging}
         onTouchMove={drag}
       >
-        {power && (
+        {power && cur && (
           <>
-            {cur && (
-              <>
-                <img
-                  src={cur.sprites.front_default}
-                  alt={cur.name}
-                  className="absolute left-[68px] top-[150px] w-[152px] h-[124px] rounded object-contain"
-                />
-                <div className="absolute right-[63px] top-[150px] w-[153px] h-[66px] flex items-center justify-center text-accent-yellow text-lg font-bold">
-                  {cur.name}
-                </div>
-                <div className="absolute right-[162px] bottom-[107px] w-[57px] h-[40px] flex items-center justify-center text-white font-bold text-lg">
-                  ×{cur.count}
-                </div>
-                <div className="absolute right-[53px] bottom-[108px] w-[90px] h-[38px] flex items-center justify-center text-accent-yellow font-bold text-lg">
-                  Stage {cur.stage + 1}
-                </div>
-              </>
-            )}
-            <span className="pointer-events-none absolute left-[68px]  top-[150px] w-[152px] h-[124px] rounded bg-gradient-to-br from-white/25 to-transparent" />
-            <span className="pointer-events-none absolute right-[63px] top-[150px] w-[153px] h-[66px]  rounded bg-gradient-to-br from-white/20 to-transparent" />
+            <img
+              src={cur.sprites.front_default}
+              alt={cur.name}
+              className="absolute left-[68px] top-[150px] w-[152px] h-[124px] rounded object-contain"
+            />
+            <div className="absolute right-[63px] top-[150px] w-[153px] h-[66px] flex items-center justify-center text-accent-yellow text-lg font-bold">
+              {cur.name}
+            </div>
+            <div className="absolute right-[162px] bottom-[107px] w-[57px] h-[40px] flex items-center justify-center text-white font-bold text-lg">
+              ×{cur.count}
+            </div>
+            <div className="absolute right-[53px] bottom-[108px] w-[90px] h-[38px] flex items-center justify-center text-accent-yellow font-bold text-lg">
+              Stage {cur.stage + 1}
+            </div>
+            <span className="pointer-events-none absolute left-[68px] top-[150px] w-[152px] h-[124px] rounded bg-gradient-to-br from-white/25 to-transparent" />
+            <span className="pointer-events-none absolute right-[63px] top-[150px] w-[153px] h-[66px] rounded bg-gradient-to-br from-white/20 to-transparent" />
           </>
         )}
 
@@ -141,8 +157,8 @@ export const PokedexViewer: React.FC = () => {
           <button
             onClick={() => {
               if (power && has) {
-                setShowAll(true);
-                buttonClickSound.play();
+                setShowAll(true)
+                buttonClickSound.play()
               }
             }}
             onMouseEnter={hintIn('SHOW ALL')}
@@ -157,10 +173,15 @@ export const PokedexViewer: React.FC = () => {
         <div className="absolute left-[155px] bottom-[168px] flex flex-col items-center gap-1 w-[60px] h-[45px]">
           <button
             onClick={() => {
-              if (power && has) {
-                removeOne(cur!.id);
-                buttonClickSound.play();
-              }
+              if (!power || !has) return
+              const willRemoveEntry = cur!.count === 1
+              const newLen = willRemoveEntry ? caught.length - 1 : caught.length
+              removeOne(cur!.id)
+              setIdx(i => {
+                if (newLen === 0) return 0
+                return i >= newLen ? newLen - 1 : i
+              })
+              buttonClickSound.play()
             }}
             onMouseEnter={hintIn('DELETE')}
             onMouseLeave={hintOut}
@@ -225,5 +246,5 @@ export const PokedexViewer: React.FC = () => {
         </div>
       )}
     </>
-  );
-};
+  )
+}

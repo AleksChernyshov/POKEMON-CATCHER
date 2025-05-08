@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useApolloClient } from '@apollo/client'
-import { GET_POKEMON_BY_NAME, GET_EVOLUTION_CHAIN } from '../graphql/queries'
+import { GET_POKEMON_BY_NAME } from '../graphql/queries'
 import evoLoading from '../assets/evo-loading.gif'
 
 interface Props {
@@ -14,26 +14,61 @@ export const EvolutionModal: React.FC<Props> = ({ name }) => {
 
   useEffect(() => {
     let mounted = true
+
+    const spriteUrl = (id: string | number) =>
+      `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`
+
     const load = async () => {
-      const p = await client.query({ query: GET_POKEMON_BY_NAME, variables: { name }, fetchPolicy: 'network-only' })
-      const evoId = p.data.pokemon.species.url.match(/\/(\d+)\/$/)?.[1]
-      if (!evoId) return
-      const evo = await client.query({ query: GET_EVOLUTION_CHAIN, variables: { id: evoId }, fetchPolicy: 'network-only' })
-      const parsed = typeof evo.data.evolutionChain.response === 'string'
-        ? JSON.parse(evo.data.evolutionChain.response)
-        : evo.data.evolutionChain.response
-      const names: string[] = []
-      let n = parsed.chain
-      while (n) { names.push(n.species.name); n = n.evolves_to?.[0] }
-      const list: { sprite: string; name: string }[] = []
-      for (const nm of names) {
-        const r = await client.query({ query: GET_POKEMON_BY_NAME, variables: { name: nm }, fetchPolicy: 'network-only' })
-        list.push({ name: r.data.pokemon.name, sprite: r.data.pokemon.sprites.front_default })
+      try {
+        const p = await client.query({
+          query: GET_POKEMON_BY_NAME,
+          variables: { name },
+          fetchPolicy: 'network-only'
+        })
+
+        const speciesUrl: string | undefined = p.data?.pokemon?.species?.url
+        if (!speciesUrl) throw new Error('species url not found')
+
+        const speciesRes = await fetch(speciesUrl).then(r => r.json())
+        const evoUrl: string | undefined = speciesRes?.evolution_chain?.url
+        if (!evoUrl) {
+          if (mounted) {
+            setChain([])
+            setLoading(false)
+          }
+          return
+        }
+
+        const evoRes = await fetch(evoUrl).then(r => r.json())
+
+        const list: { sprite: string; name: string }[] = []
+        let node = evoRes.chain
+        while (node) {
+          const spName = node.species.name
+          const spId = node.species.url.match(/\/(\d+)\/$/)?.[1]
+          list.push({
+            name: spName,
+            sprite: spId ? spriteUrl(spId) : '',
+          })
+          node = node.evolves_to?.[0]
+        }
+
+        if (mounted) {
+          setChain(list)
+          setLoading(false)
+        }
+      } catch {
+        if (mounted) {
+          setChain([])
+          setLoading(false)
+        }
       }
-      if (mounted) { setChain(list); setLoading(false) }
     }
+
     load()
-    return () => { mounted = false }
+    return () => {
+      mounted = false
+    }
   }, [name, client])
 
   return (
@@ -44,7 +79,10 @@ export const EvolutionModal: React.FC<Props> = ({ name }) => {
       style={loading ? { background: `url(${evoLoading}) center/cover no-repeat` } : {}}
     >
       <h2 className="mb-6 text-center text-2xl text-accent-yellow">Evolution Chain</h2>
-      {!loading && (
+      {!loading && chain.length === 0 && (
+        <p className="text-center text-text-default">No evolution data</p>
+      )}
+      {!loading && chain.length > 0 && (
         <div className="flex items-center justify-center gap-4">
           {chain.map((p, i) => (
             <React.Fragment key={p.name}>
