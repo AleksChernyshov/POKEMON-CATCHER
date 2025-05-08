@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import pokedexImg from '../assets/pokedex.png';
 import onOffIcon from '../assets/on-off.png';
-// import hologramImg from '../assets/hologram.png';
 import { usePokemonStore, CaughtEntry } from '../store/pokemonStore';
 import { CaughtList } from './CaughtList';
 import { EvolutionModal } from './EvolutionModal';
@@ -60,18 +59,20 @@ export const PokedexViewer: React.FC = () => {
     });
   };
 
-  const startDragging = (e: React.MouseEvent) => {
+  const startDragging = (e: React.MouseEvent | React.TouchEvent) => {
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
     setIsDragging(true);
-    dragStartRef.current = { x: e.clientX - position.x, y: e.clientY - position.y };
+    dragStartRef.current = { x: clientX - position.x, y: clientY - position.y };
   };
 
   const stopDragging = () => setIsDragging(false);
 
-  const drag = (e: React.MouseEvent) => {
+  const drag = (e: React.MouseEvent | React.TouchEvent) => {
     if (!isDragging) return;
-    const x = e.clientX - dragStartRef.current.x;
-    const y = e.clientY - dragStartRef.current.y;
-    setPosition({ x, y });
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    setPosition({ x: clientX - dragStartRef.current.x, y: clientY - dragStartRef.current.y });
   };
 
   return (
@@ -84,18 +85,15 @@ export const PokedexViewer: React.FC = () => {
           backgroundRepeat: 'no-repeat',
           left: `${position.x}px`,
           top: `${position.y}px`,
-          zIndex: 50,
+          zIndex: 20,
         }}
         onMouseDown={startDragging}
         onMouseUp={stopDragging}
         onMouseMove={drag}
+        onTouchStart={startDragging}
+        onTouchEnd={stopDragging}
+        onTouchMove={drag}
       >
-        {/* <img
-          src={hologramImg}
-          alt="Hologram"
-          className="absolute -left-[177px] -top-[278px] w-[1200px] h-[400px] z-10"
-        /> */}
-
         {power && (
           <>
             {cur && (
