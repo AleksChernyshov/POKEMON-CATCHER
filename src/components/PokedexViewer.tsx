@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import pokedexImg from "../assets/pokedex.png";
 import onOffIcon from "../assets/on-off.png";
 import holoSphereImg from "../assets/holo-sphere.png";
+import pallet from "../assets/pallet.png";
 import { usePokemonStore, CaughtEntry } from "../store/pokemonStore";
 import { CaughtList } from "./CaughtList";
 import { EvolutionModal } from "./EvolutionModal";
@@ -38,9 +39,17 @@ export const PokedexViewer: React.FC = () => {
   }, [showAll]);
 
   useEffect(() => {
-    if (caught.length > prevLen.current) setIdx(caught.length - 1);
+    if (caught.length > prevLen.current) {
+      setIdx(caught.length - 1);
+    }
+    else if (idx >= caught.length && caught.length > 0) {
+      setIdx(caught.length - 1);
+    }
+    else if (caught.length === 0) {
+      setIdx(0);
+    }
     prevLen.current = caught.length;
-  }, [caught.length]);
+  }, [caught.length, idx]);
 
   const has = caught.length > 0;
   const cur: CaughtEntry | null = has ? caught[idx] : null;
@@ -62,16 +71,12 @@ export const PokedexViewer: React.FC = () => {
   const hintIn = (t: string) => () => setHint(t);
   const hintOut = () => setHint("");
 
-  const evoDown = () => {
+  const toggleEvo = () => {
     if (power && has) {
-      setShowEvo(true);
-      setHint("SHOW EVO");
+      setShowEvo((v) => !v);
+      setHint(() => (showEvo ? "" : "SHOW EVO"));
       buttonClickSound.play();
     }
-  };
-  const evoUp = () => {
-    setShowEvo(false);
-    setHint("");
   };
 
   const togglePower = () => {
@@ -239,17 +244,18 @@ export const PokedexViewer: React.FC = () => {
 
         <div className="absolute left-[191px] bottom-[108px] flex flex-col items-center gap-1 w-[30px] h-[45px]">
           <button
-            onMouseDown={evoDown}
-            onMouseUp={evoUp}
-            onMouseLeave={evoUp}
-            onMouseEnter={hintIn("SHOW EVO")}
+            onClick={toggleEvo}
+            onMouseEnter={hintIn(showEvo ? "HIDE EVO" : "SHOW EVO")}
+            onMouseLeave={hintOut}
             className={`group relative w-[34px] h-[18px] rounded-lg cursor-pointer ${disabled}`}
           >
             <span
               className={`absolute inset-0 rounded-lg border-2 border-transparent transition-colors duration-50 ${
                 power &&
                 has &&
-                "group-hover:shadow-[0_0_6px_2px_rgba(255,255,0,0.4)] group-active:shadow-[0_0_6px_2px_rgba(255,255,0,0.8)] group-active:border-yellow-400"
+                (showEvo
+                  ? "shadow-[0_0_6px_2px_rgba(255,255,0,0.8)] border-yellow-400"
+                  : "group-hover:shadow-[0_0_6px_2px_rgba(255,255,0,0.4)] group-active:shadow-[0_0_6px_2px_rgba(255,255,0,0.8)] group-active:border-yellow-400")
               }`}
             />
           </button>
@@ -284,7 +290,7 @@ export const PokedexViewer: React.FC = () => {
           {hint}
         </div>
 
-        {showEvo && has && (
+        {showEvo && power && has && (
           <div className="absolute left-[80px] top-[80px] ml-4 z-50 pointer-events-auto">
             <EvolutionModal name={cur!.name} />
           </div>
@@ -292,21 +298,49 @@ export const PokedexViewer: React.FC = () => {
       </div>
 
       {showAll && has && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 px-4">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75"
+          onClick={() => setShowAll(false)}
+        >
           <div
-            ref={modalRef}
-            className="relative container mx-auto max-w-3xl bg-bg-secondary p-6 rounded-2xl max-h-[80vh] overflow-auto"
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-[720px] h-[640px]  overflow-hidden rounded-2xl"
           >
+            <img
+              src={pallet}
+              alt=""
+              className="absolute inset-0 h-full w-full  select-none pointer-events-none
+             [clip-path:inset(0_100px_0_100px)]"
+            />
+
+            <img
+              src={pallet}
+              alt=""
+              className="absolute inset-y-0 left-0 w-[150px] h-full object-cover select-none pointer-events-none"
+              style={{ objectPosition: "left top" }}
+            />
+
+            <img
+              src={pallet}
+              alt=""
+              className="absolute inset-y-0 right-0 w-[150px] h-full object-cover select-none pointer-events-none"
+              style={{ objectPosition: "right top" }}
+            />
+
             <button
               onClick={() => setShowAll(false)}
-              className="absolute top-2 right-2 flex h-7 w-7 items-start justify-center rounded-full text-xl text-red-600 transition hover:bg-red-600 hover:text-white pt-[2px]"
+              className="absolute top-0 right-0 flex h-8 w-8 pt-1.5 items-center justify-center
+                     rounded-full bg-red-600/80 text-xl leading-none text-white hover:bg-red-600 transition"
             >
-              ×
+              x
             </button>
-            <h2 className="mb-6 text-center text-2xl text-accent-yellow">
-              All Caught Pokémon
+
+            <h2 className="mb-6 text-center text-3xl font-bold text-accent-yellow">
+              All&nbsp;Caught&nbsp;Pokémon
             </h2>
-            <CaughtList />
+            <div className="relative z-10 px-[58px] max-h-[520px] overflow-auto">
+              <CaughtList />
+            </div>
           </div>
         </div>
       )}
