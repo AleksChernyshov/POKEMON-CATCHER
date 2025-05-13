@@ -1,21 +1,28 @@
-import React from 'react'
-import { usePokemonStore, CaughtEntry } from '../store/pokemonStore'
+import React from "react";
+import { usePokemonStore, CaughtEntry } from "../store/pokemonStore";
 
 export const CaughtList: React.FC = () => {
-  const caught    = usePokemonStore(s => s.caught)
-  const removeOne = usePokemonStore(s => s.removeOne)
+  const caught = usePokemonStore((s) => s.caught);
+  const removeOne = usePokemonStore((s) => s.removeOne);
 
-  if (!caught.length) return null
+  if (!caught.length) return null;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 justify-items-center">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center py-4">
       {caught.map((p: CaughtEntry) => (
         <div
           key={p.id}
-          className="relative w-full max-w-[300px] p-5 border-2 border-accent-yellow rounded-lg bg-bg-secondary"
+          className="group relative w-full max-w-[300px] rounded-2xl border-4 border-accent-yellow/60
+                     bg-gradient-to-br from-bg-secondary via-bg-secondary/80 to-bg-secondary/60
+                     shadow-[0_4px_12px_rgba(0,0,0,.35)] transition
+                     hover:-translate-y-1 hover:shadow-[0_8px_18px_rgba(251,191,36,.35)]"
         >
+
           {p.count > 1 && (
-            <span className="absolute top-[10px] left-2 rounded-full bg-accent-yellow px-2 pt-[6px] pb-[2px] text-sm font-bold text-black shadow">
+            <span
+              className="absolute -top-3 -left-3 rounded-full bg-accent-yellow px-3 pt-[10px] pb-[4px]
+                         text-sm font-bold text-black shadow-lg rotate-[-8deg]"
+            >
               ×{p.count}
             </span>
           )}
@@ -23,25 +30,38 @@ export const CaughtList: React.FC = () => {
           <button
             onClick={() => removeOne(p.id)}
             aria-label="Remove one"
-            className="absolute top-2 right-2 flex h-7 w-7 items-start justify-center rounded-full text-xl text-red-600 transition hover:bg-red-600 hover:text-white pt-[3px]"
+            className="absolute -top-3 -right-3 flex h-8 w-8 pt-1.5 items-center justify-center rounded-full
+                       bg-red-600 text-xl text-white shadow-lg transition
+                       hover:bg-red-600 hover:scale-110"
           >
             ×
           </button>
 
-          <img
-            src={p.sprites.front_default}
-            alt={p.name}
-            className="mx-auto mb-3 h-24 w-24 object-contain"
-          />
+          <div className="flex flex-col items-center px-6 py-8">
+            <div className="relative mb-4 w-24 h-24">
+              <img
+                src={p.sprites.front_default}
+                alt={p.name}
+                className="absolute inset-0 h-full w-full object-contain
+                           transition-transform duration-200 group-hover:scale-110"
+              />
+              <span
+                className="pointer-events-none absolute inset-0 rounded-full
+                               bg-gradient-to-br from-white/25 to-transparent"
+              />
+            </div>
 
-          <div className="text-center font-bold text-text-default whitespace-nowrap">
-            {p.name}
-            <span className="ml-1 text-sm text-accent-yellow">
-              (Stage&nbsp;{p.stage + 1})
-            </span>
+            <div className="text-center font-bold text-text-default">
+              {p.name}
+              <span className="block text-sm text-accent-yellow">
+                Stage&nbsp;{p.stage + 1}
+              </span>
+            </div>
           </div>
+
+          <span className="pointer-events-none absolute inset-0 rounded-2xl ring-0 ring-accent-yellow/30 group-hover:ring-2 transition"/>
         </div>
       ))}
     </div>
-  )
-}
+  );
+};

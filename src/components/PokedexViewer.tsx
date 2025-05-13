@@ -304,7 +304,7 @@ export const PokedexViewer: React.FC = () => {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-[720px] h-[640px]  overflow-hidden rounded-2xl"
+            className="relative w-full max-w-[720px] h-[640px] rounded-2xl"
           >
             <img
               src={pallet}
@@ -327,18 +327,20 @@ export const PokedexViewer: React.FC = () => {
               style={{ objectPosition: "right top" }}
             />
 
-            <button
-              onClick={() => setShowAll(false)}
-              className="absolute top-0 right-0 flex h-8 w-8 pt-1.5 items-center justify-center
-                     rounded-full bg-red-600/80 text-xl leading-none text-white hover:bg-red-600 transition"
-            >
-              x
-            </button>
+            <div className="flex justify-center items-center -mt-4 mb-7">
+              <button
+                onClick={() => setShowAll(false)}
+                className="absolute -top-4 right-0 flex h-8 w-8 pt-1.5 items-center justify-center
+                      rounded-full bg-red-600/80 text-xl leading-none text-white hover:bg-red-600 transition"
+              >
+                x
+              </button>
 
-            <h2 className="mb-6 text-center text-3xl font-bold text-accent-yellow">
-              All&nbsp;Caught&nbsp;Pokémon
-            </h2>
-            <div className="relative z-10 px-[58px] max-h-[520px] overflow-auto">
+              <h2 className="text-center text-3xl font-bold text-accent-yellow text-wrap">
+                All Caught Pokémon
+              </h2>
+            </div>
+            <div className="relative z-10 px-[66px] max-h-[548px] rounded-3xl overflow-auto">
               <CaughtList />
             </div>
           </div>
