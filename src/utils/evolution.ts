@@ -8,10 +8,10 @@ export function findStage(
   name: string,
   depth = 0
 ): number | null {
-  if (node.species.name === name) return depth;
+  if (node.species.name === name) return depth
   for (const next of node.evolves_to) {
-    const d = findStage(next, name, depth + 1);
-    if (d !== null) return d;
+    const d = findStage(next, name, depth + 1)
+    if (d !== null) return d
   }
-  return null;
+  return null
 }

@@ -1,11 +1,11 @@
-import React from "react";
-import { usePokemonStore, CaughtEntry } from "../store/pokemonStore";
+import React from "react"
+import { usePokemonStore, CaughtEntry } from "../store/pokemonStore"
 
 export const CaughtList: React.FC = () => {
-  const caught = usePokemonStore((s) => s.caught);
-  const removeOne = usePokemonStore((s) => s.removeOne);
+  const caught = usePokemonStore((s) => s.caught)
+  const removeOne = usePokemonStore((s) => s.removeOne)
 
-  if (!caught.length) return null;
+  if (!caught.length) return null
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center py-4">
@@ -63,5 +63,5 @@ export const CaughtList: React.FC = () => {
         </div>
       ))}
     </div>
-  );
-};
+  )
+}

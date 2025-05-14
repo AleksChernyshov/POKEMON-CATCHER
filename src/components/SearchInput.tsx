@@ -4,12 +4,12 @@ import React, {
   useRef,
   useEffect,
   useState,
-} from "react";
-import pokeball from "../assets/pokeball.png";
-import particles from "../assets/particles_bg.png";
-import caughtBadge from "../assets/CAUGHT.png";
-import { findStage } from "../utils/evolution";
-import { usePokemonStore } from "../store/pokemonStore";
+} from "react"
+import pokeball from "../assets/pokeball.png"
+import particles from "../assets/particles_bg.png"
+import caughtBadge from "../assets/CAUGHT.png"
+import { findStage } from "../utils/evolution"
+import { usePokemonStore } from "../store/pokemonStore"
 
 export interface Suggestion {
   id: number;
@@ -31,14 +31,14 @@ interface SearchInputProps {
   onSelect: (name: string) => void;
 }
 
-const CHANCE_LABEL = ["90%", "50%", "30%"];
+const CHANCE_LABEL = ["90%", "50%", "30%"]
 
 const SuggestionCard: React.FC<{
   p: Suggestion;
   caught: boolean;
   onSelect: (n: string) => void;
 }> = ({ p, caught, onSelect }) => {
-  const [stage, setStage] = useState<0 | 1 | 2>(0);
+  const [stage, setStage] = useState<0 | 1 | 2>(0)
 
   useEffect(() => {
     let cancel = false;
@@ -46,22 +46,22 @@ const SuggestionCard: React.FC<{
       try {
         const sp = await fetch(
           `https://pokeapi.co/api/v2/pokemon-species/${p.id}/`
-        ).then((r) => r.json());
-        const evoUrl: string | undefined = sp?.evolution_chain?.url;
-        if (!evoUrl) return;
-        const chain = await fetch(evoUrl).then((r) => r.json());
-        const st = findStage(chain.chain, p.name.toLowerCase());
-        if (!cancel && st !== null) setStage(st as 0 | 1 | 2);
+        ).then((r) => r.json())
+        const evoUrl: string | undefined = sp?.evolution_chain?.url
+        if (!evoUrl) return
+        const chain = await fetch(evoUrl).then((r) => r.json())
+        const st = findStage(chain.chain, p.name.toLowerCase())
+        if (!cancel && st !== null) setStage(st as 0 | 1 | 2)
       } catch (err) {
-        console.error("Failed to load evolution chain:", err);
+        console.error("Failed to load evolution chain:", err)
       }
-    })();
+    })()
     return () => {
-      cancel = true;
-    };
-  }, [p]);
+      cancel = true
+    }
+  }, [p])
 
-  const chance = CHANCE_LABEL[stage];
+  const chance = CHANCE_LABEL[stage]
 
   return (
     <div
@@ -94,15 +94,15 @@ const SuggestionCard: React.FC<{
         {p.name}
       </span>
     </div>
-  );
-};
+  )
+}
 
 type Phase = "left" | "inside" | "right";
-const ENTRY_MS = 300;
-const EXIT_MS = 400;
-const LEFT_X = -70;
-const INSIDE_X = 10;
-const RIGHT_X = 600;
+const ENTRY_MS = 300
+const EXIT_MS = 400
+const LEFT_X = -70
+const INSIDE_X = 10
+const RIGHT_X = 600
 
 export const SearchInput: React.FC<SearchInputProps> = ({
   searchTerm,
@@ -117,54 +117,41 @@ export const SearchInput: React.FC<SearchInputProps> = ({
   onKeyDown,
   onSelect,
 }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [phase, setPhase] = useState<Phase>("left");
-  const [duration, setDuration] = useState(0);
-  const [enableT, setEnableT] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [phase, setPhase] = useState<Phase>("left")
+  const [duration, setDuration] = useState(0)
+  const [enableT, setEnableT] = useState(false)
 
-  const caught = usePokemonStore((s) => s.caught);
-  const caughtSet = new Set(caught.map((c) => c.name.toLowerCase()));
+  const caught = usePokemonStore((s) => s.caught)
+  const caughtSet = new Set(caught.map((c) => c.name.toLowerCase()))
 
   useEffect(() => {
     if (isFocused) {
-      setEnableT(false);
-      setDuration(0);
-      setPhase("left");
+      setEnableT(false)
+      setDuration(0)
+      setPhase("left")
       requestAnimationFrame(() => {
-        setDuration(ENTRY_MS);
-        setEnableT(true);
-        setPhase("inside");
-      });
+        setDuration(ENTRY_MS)
+        setEnableT(true)
+        setPhase("inside")
+      })
     } else {
-      setDuration(EXIT_MS);
-      setEnableT(true);
-      setPhase("right");
+      setDuration(EXIT_MS)
+      setEnableT(true)
+      setPhase("right")
     }
-  }, [isFocused]);
+  }, [isFocused])
 
   const handleTransitionEnd = () => {
     if (phase === "right") {
-      setEnableT(false);
-      setDuration(0);
-      setPhase("left");
+      setEnableT(false)
+      setDuration(0)
+      setPhase("left")
     }
-  };
+  }
 
   const ballX =
-    phase === "inside" ? INSIDE_X : phase === "right" ? RIGHT_X : LEFT_X;
-
-  useEffect(() => {
-    const outside = (e: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
-      ) {
-        onBlur();
-      }
-    };
-    document.addEventListener("mousedown", outside);
-    return () => document.removeEventListener("mousedown", outside);
-  }, [onBlur]);
+    phase === "inside" ? INSIDE_X : phase === "right" ? RIGHT_X : LEFT_X
 
   return (
     <div ref={containerRef} className="relative">
@@ -288,5 +275,5 @@ export const SearchInput: React.FC<SearchInputProps> = ({
 
       {loading && <p className="mt-4 text-text-default">Loading details…</p>}
     </div>
-  );
-};
+  )
+}

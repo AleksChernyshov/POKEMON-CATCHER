@@ -1,106 +1,111 @@
-import React, { useState, useRef, useEffect } from "react";
-import pokedexImg from "../assets/pokedex.png";
-import onOffIcon from "../assets/on-off.png";
-import holoSphereImg from "../assets/holo-sphere.png";
-import pallet from "../assets/pallet.png";
-import { usePokemonStore, CaughtEntry } from "../store/pokemonStore";
-import { CaughtList } from "./CaughtList";
-import { EvolutionModal } from "./EvolutionModal";
-import { Howl } from "howler";
+import React, { useState, useRef, useEffect } from "react"
+import { Transition } from "@headlessui/react"
+import pokedexImg from "../assets/pokedex.png"
+import onOffIcon from "../assets/on-off.png"
+import holoSphereImg from "../assets/holo-sphere.png"
+import pallet from "../assets/pallet.png"
+import { usePokemonStore, CaughtEntry } from "../store/pokemonStore"
+import { CaughtList } from "./CaughtList"
+import { EvolutionModal } from "./EvolutionModal"
+import { Howl } from "howler"
 
 export const PokedexViewer: React.FC = () => {
-  const caught = usePokemonStore((s) => s.caught);
-  const removeOne = usePokemonStore((s) => s.removeOne);
+  const caught = usePokemonStore((s) => s.caught)
+  const removeOne = usePokemonStore((s) => s.removeOne)
 
-  const [idx, setIdx] = useState(0);
-  const [power, setPower] = useState(false);
-  const [showAll, setShowAll] = useState(false);
-  const [showEvo, setShowEvo] = useState(false);
-  const [hint, setHint] = useState("");
-  const [isDragging, setDragging] = useState(false);
-  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const [idx, setIdx] = useState(0)
+  const [power, setPower] = useState(false)
+  const [showAll, setShowAll] = useState(false)
+  const [showEvo, setShowEvo] = useState(false)
+  const [hint, setHint] = useState("")
+  const [isDragging, setDragging] = useState(false)
+  const [pos, setPos] = useState({ x: 0, y: 0 })
 
-  const modalRef = useRef<HTMLDivElement>(null);
-  const dragStartRef = useRef({ x: 0, y: 0 });
-  const prevLen = useRef(0);
+  const modalRef = useRef<HTMLDivElement>(null)
+  const dragStartRef = useRef({ x: 0, y: 0 })
+  const prevLen = useRef(0)
 
-  const powerOnSound = new Howl({src: ["/POKEMON-CATCHER/assets/power-on.mp3"]});
-  const powerOffSound = new Howl({src: ["/POKEMON-CATCHER/assets/power-off.mp3"]});
-  const buttonClickSound = new Howl({src: ["/POKEMON-CATCHER/assets/button.mp3"]});
+  const powerOnSound = new Howl({
+    src: ["/POKEMON-CATCHER/assets/power-on.mp3"],
+  })
+  const powerOffSound = new Howl({
+    src: ["/POKEMON-CATCHER/assets/power-off.mp3"],
+  })
+  const buttonClickSound = new Howl({
+    src: ["/POKEMON-CATCHER/assets/button.mp3"],
+  })
 
   useEffect(() => {
-    if (!showAll) return;
+    if (!showAll) return
     const outside = (e: MouseEvent) => {
       if (modalRef.current && !modalRef.current.contains(e.target as Node))
-        setShowAll(false);
-    };
-    document.addEventListener("mousedown", outside);
-    return () => document.removeEventListener("mousedown", outside);
-  }, [showAll]);
+        setShowAll(false)
+    }
+    document.addEventListener("mousedown", outside)
+    return () => document.removeEventListener("mousedown", outside)
+  }, [showAll])
 
   useEffect(() => {
     if (caught.length > prevLen.current) {
-      setIdx(caught.length - 1);
+      setIdx(caught.length - 1)
+    } else if (idx >= caught.length && caught.length > 0) {
+      setIdx(caught.length - 1)
+    } else if (caught.length === 0) {
+      setIdx(0)
     }
-    else if (idx >= caught.length && caught.length > 0) {
-      setIdx(caught.length - 1);
-    }
-    else if (caught.length === 0) {
-      setIdx(0);
-    }
-    prevLen.current = caught.length;
-  }, [caught.length, idx]);
+    prevLen.current = caught.length
+  }, [caught.length, idx])
 
-  const has = caught.length > 0;
-  const cur: CaughtEntry | null = has ? caught[idx] : null;
+  const has = caught.length > 0
+  const cur: CaughtEntry | null = has ? caught[idx] : null
 
   const prev = () => {
     if (power && has) {
-      setIdx((i) => (i ? i - 1 : caught.length - 1));
-      buttonClickSound.play();
+      setIdx((i) => (i ? i - 1 : caught.length - 1))
+      buttonClickSound.play()
     }
-  };
+  }
   const next = () => {
     if (power && has) {
-      setIdx((i) => (i === caught.length - 1 ? 0 : i + 1));
-      buttonClickSound.play();
+      setIdx((i) => (i === caught.length - 1 ? 0 : i + 1))
+      buttonClickSound.play()
     }
-  };
-  const disabled = power && has ? "" : "pointer-events-none opacity-40";
+  }
+  const disabled = power && has ? "" : "pointer-events-none opacity-40"
 
-  const hintIn = (t: string) => () => setHint(t);
-  const hintOut = () => setHint("");
+  const hintIn = (t: string) => () => setHint(t)
+  const hintOut = () => setHint("")
 
   const toggleEvo = () => {
     if (power && has) {
-      setShowEvo((v) => !v);
-      setHint(() => (showEvo ? "" : "SHOW EVO"));
-      buttonClickSound.play();
+      setShowEvo((v) => !v)
+      setHint(() => (showEvo ? "" : "SHOW EVO"))
+      buttonClickSound.play()
     }
-  };
+  }
 
   const togglePower = () => {
     setPower((p) => {
-      const n = !p;
-      if (n) powerOnSound.play();
-      else powerOffSound.play();
-      return n;
-    });
-  };
+      const n = !p
+      if (n) powerOnSound.play()
+      else powerOffSound.play()
+      return n
+    })
+  }
 
   const startDragging = (e: React.MouseEvent | React.TouchEvent) => {
-    const cX = "touches" in e ? e.touches[0].clientX : e.clientX;
-    const cY = "touches" in e ? e.touches[0].clientY : e.clientY;
-    setDragging(true);
-    dragStartRef.current = { x: cX - pos.x, y: cY - pos.y };
-  };
-  const stopDragging = () => setDragging(false);
+    const cX = "touches" in e ? e.touches[0].clientX : e.clientX
+    const cY = "touches" in e ? e.touches[0].clientY : e.clientY
+    setDragging(true)
+    dragStartRef.current = { x: cX - pos.x, y: cY - pos.y }
+  }
+  const stopDragging = () => setDragging(false)
   const drag = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!isDragging) return;
-    const cX = "touches" in e ? e.touches[0].clientX : e.clientX;
-    const cY = "touches" in e ? e.touches[0].clientY : e.clientY;
-    setPos({ x: cX - dragStartRef.current.x, y: cY - dragStartRef.current.y });
-  };
+    if (!isDragging) return
+    const cX = "touches" in e ? e.touches[0].clientX : e.clientX
+    const cY = "touches" in e ? e.touches[0].clientY : e.clientY
+    setPos({ x: cX - dragStartRef.current.x, y: cY - dragStartRef.current.y })
+  }
 
   return (
     <>
@@ -196,8 +201,8 @@ export const PokedexViewer: React.FC = () => {
           <button
             onClick={() => {
               if (power && has) {
-                setShowAll(true);
-                buttonClickSound.play();
+                setShowAll(true)
+                buttonClickSound.play()
               }
             }}
             onMouseEnter={hintIn("SHOW ALL")}
@@ -221,8 +226,8 @@ export const PokedexViewer: React.FC = () => {
           <button
             onClick={() => {
               if (power && has) {
-                removeOne(cur!.id);
-                buttonClickSound.play();
+                removeOne(cur!.id)
+                buttonClickSound.play()
               }
             }}
             onMouseEnter={hintIn("DELETE")}
@@ -297,55 +302,72 @@ export const PokedexViewer: React.FC = () => {
         )}
       </div>
 
-      {showAll && has && (
+      <Transition
+        show={showAll && has}
+        enter="transition-opacity duration-500"
+        enterFrom="opacity-0"
+        enterTo="opacity-100"
+        leave="transition-opacity duration-700 delay-[200ms]"
+        leaveFrom="opacity-100"
+        leaveTo="opacity-0"
+      >
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/75"
           onClick={() => setShowAll(false)}
         >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-[720px] h-[640px] rounded-2xl"
+          <Transition.Child
+            enter="transition-transform duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
+            enterFrom="-translate-x-full"
+            enterTo="translate-x-0"
+            leave="transition-all duration-700 ease-in-out"
+            leaveFrom="translate-x-0 opacity-100"
+            leaveTo="translate-x-full opacity-0"
           >
-            <img
-              src={pallet}
-              alt=""
-              className="absolute inset-0 h-full w-full  select-none pointer-events-none
-             [clip-path:inset(0_100px_0_100px)]"
-            />
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-[720px] h-[640px] rounded-2xl transform"
+            >
+              <img
+                src={pallet}
+                alt=""
+                className="absolute inset-0 h-full w-full  select-none pointer-events-none
+               [clip-path:inset(0_100px_0_100px)]"
+              />
 
-            <img
-              src={pallet}
-              alt=""
-              className="absolute inset-y-0 left-0 w-[150px] h-full object-cover select-none pointer-events-none"
-              style={{ objectPosition: "left top" }}
-            />
+              <img
+                src={pallet}
+                alt=""
+                className="absolute inset-y-0 left-0 w-[150px] h-full object-cover select-none pointer-events-none"
+                style={{ objectPosition: "left top" }}
+              />
 
-            <img
-              src={pallet}
-              alt=""
-              className="absolute inset-y-0 right-0 w-[150px] h-full object-cover select-none pointer-events-none"
-              style={{ objectPosition: "right top" }}
-            />
+              <img
+                src={pallet}
+                alt=""
+                className="absolute inset-y-0 right-0 w-[150px] h-full object-cover select-none pointer-events-none"
+                style={{ objectPosition: "right top" }}
+              />
 
-            <div className="flex justify-center items-center -mt-4 mb-7">
-              <button
-                onClick={() => setShowAll(false)}
-                className="absolute -top-4 right-0 flex h-8 w-8 pt-1.5 items-center justify-center
-                      rounded-full bg-red-600/80 text-xl leading-none text-white hover:bg-red-600 transition"
-              >
-                x
-              </button>
+              <div className="flex justify-center items-center -mt-4 mb-7">
+                <button
+                  onClick={() => setShowAll(false)}
+                  className="absolute -top-4 right-0 flex h-8 w-8 pt-1.5 items-center justify-center
+                        rounded-full bg-red-600/80 text-xl leading-none text-white hover:bg-red-600 transition"
+                >
+                  x
+                </button>
 
-              <h2 className="text-center text-3xl font-bold text-accent-yellow text-wrap">
-                All Caught Pokémon
-              </h2>
+                <h2 className="text-center text-3xl font-bold text-accent-yellow text-wrap">
+                  All Caught Pokémon
+                </h2>
+              </div>
+              <div className="relative z-10 px-[66px] max-h-[548px] rounded-3xl overflow-auto">
+                <CaughtList />
+              </div>
             </div>
-            <div className="relative z-10 px-[66px] max-h-[548px] rounded-3xl overflow-auto">
-              <CaughtList />
-            </div>
-          </div>
+          </Transition.Child>
         </div>
-      )}
+      </Transition>
     </>
-  );
-};
+  )
+}
