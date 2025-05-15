@@ -4,14 +4,14 @@ import React, {
   ChangeEvent,
   useEffect,
   useRef,
-} from "react"
-import { useQuery } from "@apollo/client"
-import { GET_POKEMON_LIST } from "../graphql/queries"
-import { SearchInput, Suggestion } from "../components/SearchInput"
-import { CatchModal } from "../components/CatchModal"
-import { usePokemonStore } from "../store/pokemonStore"
-import { PokedexViewer } from "../components/PokedexViewer"
-import pikaGif from "../assets/pika.gif"
+} from "react";
+import { useQuery } from "@apollo/client";
+import { GET_POKEMON_LIST } from "../graphql/queries";
+import { SearchInput, Suggestion } from "../components/SearchInput";
+import { CatchModal } from "../components/CatchModal";
+import { usePokemonStore } from "../store/pokemonStore";
+import { PokedexViewer } from "../components/PokedexViewer";
+import pikaGif from "../assets/pika.gif";
 
 interface PokemonListData {
   pokemons: { results: Suggestion[] };
@@ -23,48 +23,48 @@ interface PokemonListVars {
 }
 
 const Home: React.FC = () => {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [isFocused, setIsFocused] = useState(false)
-  const [showSuggestions, setShowSuggestions] = useState(false)
-  const [selected, setSelected] = useState<Suggestion | null>(null)
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isFocused, setIsFocused] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selected, setSelected] = useState<Suggestion | null>(null);
 
   const { data: listData, loading: listLoading } = useQuery<
     PokemonListData,
     PokemonListVars
-  >(GET_POKEMON_LIST, { variables: { limit: 251, offset: 0 } })
+  >(GET_POKEMON_LIST, { variables: { limit: 251, offset: 0 } });
 
-  const addPokemon = usePokemonStore((s) => s.addPokemon)
+  const addPokemon = usePokemonStore((s) => s.addPokemon);
 
-  const lower = searchTerm.trim().toLowerCase()
+  const lower = searchTerm.trim().toLowerCase();
   const suggestions =
     listData?.pokemons.results.filter(
       (p) =>
         p.name.toLowerCase().includes(lower) && p.name.toLowerCase() !== lower
-    ) ?? []
+    ) ?? [];
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value)
+    setSearchTerm(e.target.value);
     if (e.target.value.trim() !== "") {
-      setShowSuggestions(true)
+      setShowSuggestions(true);
     }
-  }
+  };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && lower) {
-      e.preventDefault()
-      setShowSuggestions(false)
-      setIsFocused(false)
+      e.preventDefault();
+      setShowSuggestions(false);
+      setIsFocused(false);
     }
-  }
+  };
 
   const handleSelect = (p: Suggestion) => {
-    setSelected(p)
-    setShowSuggestions(false)
-    setIsFocused(false)
-    setSearchTerm("")
-  }
+    setSelected(p);
+    setShowSuggestions(false);
+    setIsFocused(false);
+    setSearchTerm("");
+  };
 
-  const containerRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -73,18 +73,18 @@ const Home: React.FC = () => {
         !containerRef.current.contains(e.target as Node)
       ) {
         requestAnimationFrame(() => {
-          setShowSuggestions(false)
-          setIsFocused(false)
-        })
+          setShowSuggestions(false);
+          setIsFocused(false);
+        });
       }
-    }
+    };
 
     if (showSuggestions) {
-      document.addEventListener("mousedown", handleClickOutside)
+      document.addEventListener("mousedown", handleClickOutside);
       return () =>
-        document.removeEventListener("mousedown", handleClickOutside)
+        document.removeEventListener("mousedown", handleClickOutside);
     }
-  }, [showSuggestions])
+  }, [showSuggestions]);
 
   return (
     <div className="flex h-full items-start justify-center pt-20 px-4">
@@ -106,18 +106,18 @@ const Home: React.FC = () => {
             loading={false}
             onFocus={() => {
               if (searchTerm.trim() !== "") {
-                setShowSuggestions(true)
+                setShowSuggestions(true);
               }
-              setIsFocused(true)
+              setIsFocused(true);
             }}
             onBlur={() => {
-              setIsFocused(false)
+              setIsFocused(false);
             }}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
             onSelect={(name) => {
-              const picked = suggestions.find((p) => p.name === name)
-              if (picked) handleSelect(picked)
+              const picked = suggestions.find((p) => p.name === name);
+              if (picked) handleSelect(picked);
             }}
           />
         </div>
@@ -139,7 +139,6 @@ const Home: React.FC = () => {
         <PokedexViewer />
       </div>
     </div>
-  )
-}
-
-export default Home
+  );
+};
+export default Home;

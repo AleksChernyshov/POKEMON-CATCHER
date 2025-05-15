@@ -1,11 +1,11 @@
-import React from "react"
-import { usePokemonStore, CaughtEntry } from "../store/pokemonStore"
+import React from "react";
+import { usePokemonStore, CaughtEntry } from "../store/pokemonStore";
 
 export const CaughtList: React.FC = () => {
-  const caught = usePokemonStore((s) => s.caught)
-  const removeOne = usePokemonStore((s) => s.removeOne)
+  const caught = usePokemonStore((s) => s.caught);
+  const removeOne = usePokemonStore((s) => s.removeOne);
 
-  if (!caught.length) return null
+  if (!caught.length) return null;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center py-4">
@@ -17,7 +17,6 @@ export const CaughtList: React.FC = () => {
                      shadow-[0_4px_12px_rgba(0,0,0,.35)] transition
                      hover:-translate-y-1 hover:shadow-[0_8px_18px_rgba(251,191,36,.35)]"
         >
-
           {p.count > 1 && (
             <span
               className="absolute -top-3 -left-3 rounded-full bg-accent-yellow px-3 pt-[10px] pb-[4px]
@@ -59,9 +58,9 @@ export const CaughtList: React.FC = () => {
             </div>
           </div>
 
-          <span className="pointer-events-none absolute inset-0 rounded-2xl ring-0 ring-accent-yellow/30 group-hover:ring-2 transition"/>
+          <span className="pointer-events-none absolute inset-0 rounded-2xl ring-0 ring-accent-yellow/30 group-hover:ring-2 transition" />
         </div>
       ))}
     </div>
-  )
-}
+  );
+};

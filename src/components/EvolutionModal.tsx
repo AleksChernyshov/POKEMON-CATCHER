@@ -1,21 +1,47 @@
-import React, { useEffect, useState } from "react"
-import { useApolloClient } from "@apollo/client"
-import { GET_POKEMON_BY_NAME } from "../graphql/queries"
-import pokeball from "../assets/pokeball.png"
-import { usePokemonStore } from "../store/pokemonStore"
+import React, { useEffect, useState } from "react";
+import { useApolloClient } from "@apollo/client";
+import { GET_POKEMON_BY_NAME } from "../graphql/queries";
+import pokeball from "../assets/pokeball.png";
+import { usePokemonStore } from "../store/pokemonStore";
 
 interface Props {
   name: string;
+  onCatch: (name: string) => void;
 }
 
-export const EvolutionModal: React.FC<Props> = ({ name }) => {
-  const client = useApolloClient()
-  const caught = usePokemonStore((s) => s.caught)
-  const [loading, setLoading] = useState(true)
-  const [chain, setChain] = useState<{ sprite: string; name: string }[]>([])
+interface ChainPokemon {
+  id: number;
+  name: string;
+  sprite: string;
+  sprites: { front_default: string };
+  species: { url: string };
+}
+
+export const EvolutionModal: React.FC<Props> = ({ name, onCatch }) => {
+  const client = useApolloClient();
+  const caught = usePokemonStore((s) => s.caught);
+  const addPokemon = usePokemonStore((s) => s.addPokemon);
+  const removeThree = usePokemonStore((s) => s.removeThree);
+  const setEvolutionTarget = usePokemonStore((s) => s.setEvolutionTarget);
+  const [loading, setLoading] = useState(true);
+  const [chain, setChain] = useState<ChainPokemon[]>([]);
+
+  const handleEvolution = (
+    fromPokemon: ChainPokemon,
+    toPokemon: ChainPokemon
+  ) => {
+    const fromIndex = chain.findIndex((p) => p.id === fromPokemon.id);
+    const toIndex = chain.findIndex((p) => p.id === toPokemon.id);
+    if (fromIndex !== -1 && toIndex !== -1) {
+      setEvolutionTarget(toPokemon.id);
+      addPokemon(toPokemon, toIndex);
+      removeThree(fromPokemon.id, toPokemon.id);
+      setEvolutionTarget(null);
+    }
+  };
 
   useEffect(() => {
-    let mounted = true
+    let mounted = true;
     const spriteUrl = (id: string | number) =>
       `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
 
@@ -25,48 +51,54 @@ export const EvolutionModal: React.FC<Props> = ({ name }) => {
           query: GET_POKEMON_BY_NAME,
           variables: { name },
           fetchPolicy: "network-only",
-        })
+        });
 
-        const speciesUrl: string | undefined = data?.pokemon?.species?.url
-        if (!speciesUrl) throw new Error("species url not found")
+        const speciesUrl: string | undefined = data?.pokemon?.species?.url;
+        if (!speciesUrl) throw new Error("species url not found");
 
-        const species = await fetch(speciesUrl).then((r) => r.json())
-        const evoUrl: string | undefined = species?.evolution_chain?.url
+        const species = await fetch(speciesUrl).then((r) => r.json());
+        const evoUrl: string | undefined = species?.evolution_chain?.url;
         if (!evoUrl) {
           if (mounted) {
-            setChain([])
-            setLoading(false)
+            setChain([]);
+            setLoading(false);
           }
-          return
+          return;
         }
 
-        const evoRes = await fetch(evoUrl).then((r) => r.json())
+        const evoRes = await fetch(evoUrl).then((r) => r.json());
 
-        const list: { sprite: string; name: string }[] = []
-        let node = evoRes.chain
+        const list: ChainPokemon[] = [];
+        let node = evoRes.chain;
         while (node) {
-          const { name: nm, url } = node.species
-          const id = url.match(/\/(\d+)\/$/)?.[1]
-          list.push({ name: nm, sprite: id ? spriteUrl(id) : "" })
-          node = node.evolves_to?.[0]
+          const { name: nm, url } = node.species;
+          const id = parseInt(url.match(/\/(\d+)\/$/)?.[1] || "0");
+          list.push({
+            id,
+            name: nm,
+            sprite: id ? spriteUrl(id) : "",
+            sprites: { front_default: spriteUrl(id) },
+            species: { url },
+          });
+          node = node.evolves_to?.[0];
         }
 
         if (mounted) {
-          setChain(list)
-          setLoading(false)
+          setChain(list);
+          setLoading(false);
         }
       } catch {
         if (mounted) {
-          setChain([])
-          setLoading(false)
+          setChain([]);
+          setLoading(false);
         }
       }
-    })()
+    })();
 
     return () => {
-      mounted = false
-    }
-  }, [name, client])
+      mounted = false;
+    };
+  }, [name, client]);
 
   return (
     <div
@@ -109,7 +141,11 @@ export const EvolutionModal: React.FC<Props> = ({ name }) => {
       ) : (
         <div className="flex items-center justify-center gap-4">
           {chain.map((p, i) => {
-            const isCaught = caught.some((c) => c.name === p.name)
+            const isCaught = caught.some((c) => c.name === p.name);
+            const pokemonCount = caught.find((c) => c.id === p.id)?.count || 0;
+            const nextPokemon = chain[i + 1];
+            const canEvolve = pokemonCount >= 3 && nextPokemon;
+
             return (
               <React.Fragment key={p.name}>
                 <div
@@ -120,14 +156,44 @@ export const EvolutionModal: React.FC<Props> = ({ name }) => {
                       : "text-accent-yellow/40 drop-shadow-[0_0_6px_rgba(251,191,36,0.4)] hover:text-accent-yellow/80 hover:drop-shadow-[0_0_6px_rgba(251,191,36,0.8)] cursor-pointer",
                   ].join(" ")}
                 >
-                  <img
-                    src={p.sprite}
-                    alt={p.name}
-                    className={[
-                      "h-24 w-24 object-contain transition-opacity duration-300",
-                      isCaught ? "" : "opacity-40 group-hover:opacity-100",
-                    ].join(" ")}
-                  />
+                  <div className="relative">
+                    <img
+                      src={p.sprite}
+                      alt={p.name}
+                      className={[
+                        "h-24 w-24 object-contain transition-opacity duration-300",
+                        isCaught ? "" : "opacity-40 group-hover:opacity-100",
+                      ].join(" ")}
+                    />
+                    {canEvolve && (
+                      <button
+                        onClick={() => handleEvolution(p, nextPokemon)}
+                        className="absolute inset-0 flex items-center justify-center bg-cyan-600/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"
+                      >
+                        <span className="text-accent-yellow text-lg font-bold">
+                          Evolve
+                        </span>
+                      </button>
+                    )}
+                    {isCaught && (
+                      <span
+                        className="absolute -top-2 -left-2 rounded-full bg-accent-yellow/80 px-2 pt-[8px] pb-[2px]
+                                 text-sm font-bold text-black shadow-lg rotate-[-8deg] 
+                                 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                      >
+                        ×{pokemonCount}
+                      </span>
+                    )}
+                    <button
+                      onClick={() => onCatch(p.name)}
+                      className="absolute -top-2 -right-4 rounded-full bg-accent-yellow/80 px-2 pt-[8px] pb-[2px]
+                               text-sm font-bold text-black shadow-lg rotate-[8deg]
+                               opacity-0 group-hover:opacity-100 transition-opacity duration-300
+                               hover:bg-accent-yellow"
+                    >
+                      Catch
+                    </button>
+                  </div>
                   <span
                     className={
                       isCaught ? "" : "group-hover:text-accent-yellow/80"
@@ -142,10 +208,10 @@ export const EvolutionModal: React.FC<Props> = ({ name }) => {
                   </span>
                 )}
               </React.Fragment>
-            )
+            );
           })}
         </div>
       )}
     </div>
-  )
-}
+  );
+};

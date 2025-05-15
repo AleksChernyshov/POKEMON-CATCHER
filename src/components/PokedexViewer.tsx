@@ -1,111 +1,125 @@
-import React, { useState, useRef, useEffect } from "react"
-import { Transition } from "@headlessui/react"
-import pokedexImg from "../assets/pokedex.png"
-import onOffIcon from "../assets/on-off.png"
-import holoSphereImg from "../assets/holo-sphere.png"
-import pallet from "../assets/pallet.png"
-import { usePokemonStore, CaughtEntry } from "../store/pokemonStore"
-import { CaughtList } from "./CaughtList"
-import { EvolutionModal } from "./EvolutionModal"
-import { Howl } from "howler"
+import React, { useState, useRef, useEffect } from "react";
+import { Transition } from "@headlessui/react";
+import pokedexImg from "../assets/pokedex.png";
+import onOffIcon from "../assets/on-off.png";
+import holoSphereImg from "../assets/holo-sphere.png";
+import pallet from "../assets/pallet.png";
+import { usePokemonStore, CaughtEntry } from "../store/pokemonStore";
+import { CaughtList } from "./CaughtList";
+import { EvolutionModal } from "./EvolutionModal";
+import { Howl } from "howler";
+import { CatchModal } from "../components/CatchModal";
+import type { Suggestion } from "../components/SearchInput";
 
 export const PokedexViewer: React.FC = () => {
-  const caught = usePokemonStore((s) => s.caught)
-  const removeOne = usePokemonStore((s) => s.removeOne)
+  const caught = usePokemonStore((s) => s.caught);
+  const lastCaughtId = usePokemonStore((s) => s.lastCaughtId);
+  const removeOne = usePokemonStore((s) => s.removeOne);
+  const addPokemon = usePokemonStore((s) => s.addPokemon);
 
-  const [idx, setIdx] = useState(0)
-  const [power, setPower] = useState(false)
-  const [showAll, setShowAll] = useState(false)
-  const [showEvo, setShowEvo] = useState(false)
-  const [hint, setHint] = useState("")
-  const [isDragging, setDragging] = useState(false)
-  const [pos, setPos] = useState({ x: 0, y: 0 })
+  const [idx, setIdx] = useState(0);
+  const [power, setPower] = useState(false);
+  const [showAll, setShowAll] = useState(false);
+  const [showEvo, setShowEvo] = useState(false);
+  const [hint, setHint] = useState("");
+  const [isDragging, setDragging] = useState(false);
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const [selected, setSelected] = useState<Suggestion | null>(null);
 
-  const modalRef = useRef<HTMLDivElement>(null)
-  const dragStartRef = useRef({ x: 0, y: 0 })
-  const prevLen = useRef(0)
+  const modalRef = useRef<HTMLDivElement>(null);
+  const dragStartRef = useRef({ x: 0, y: 0 });
+  const prevLen = useRef(0);
 
   const powerOnSound = new Howl({
     src: ["/POKEMON-CATCHER/assets/power-on.mp3"],
-  })
+  });
   const powerOffSound = new Howl({
     src: ["/POKEMON-CATCHER/assets/power-off.mp3"],
-  })
+  });
   const buttonClickSound = new Howl({
     src: ["/POKEMON-CATCHER/assets/button.mp3"],
-  })
+  });
 
   useEffect(() => {
-    if (!showAll) return
+    if (!showAll) return;
     const outside = (e: MouseEvent) => {
       if (modalRef.current && !modalRef.current.contains(e.target as Node))
-        setShowAll(false)
+        setShowAll(false);
+    };
+    document.addEventListener("mousedown", outside);
+    return () => document.removeEventListener("mousedown", outside);
+  }, [showAll]);
+
+  useEffect(() => {
+    if (lastCaughtId !== null) {
+      const newIdx = caught.findIndex((p) => p.id === lastCaughtId);
+      if (newIdx !== -1) {
+        setIdx(newIdx);
+      }
     }
-    document.addEventListener("mousedown", outside)
-    return () => document.removeEventListener("mousedown", outside)
-  }, [showAll])
+  }, [lastCaughtId, caught]);
 
   useEffect(() => {
     if (caught.length > prevLen.current) {
-      setIdx(caught.length - 1)
+      setIdx(caught.length - 1);
     } else if (idx >= caught.length && caught.length > 0) {
-      setIdx(caught.length - 1)
+      setIdx(caught.length - 1);
     } else if (caught.length === 0) {
-      setIdx(0)
+      setIdx(0);
     }
-    prevLen.current = caught.length
-  }, [caught.length, idx])
+    prevLen.current = caught.length;
+  }, [caught.length, idx]);
 
-  const has = caught.length > 0
-  const cur: CaughtEntry | null = has ? caught[idx] : null
+  const has = caught.length > 0;
+  const cur: CaughtEntry | null = has ? caught[idx] : null;
 
   const prev = () => {
     if (power && has) {
-      setIdx((i) => (i ? i - 1 : caught.length - 1))
-      buttonClickSound.play()
+      setIdx((i) => (i ? i - 1 : caught.length - 1));
+      buttonClickSound.play();
     }
-  }
+  };
   const next = () => {
     if (power && has) {
-      setIdx((i) => (i === caught.length - 1 ? 0 : i + 1))
-      buttonClickSound.play()
+      setIdx((i) => (i === caught.length - 1 ? 0 : i + 1));
+      buttonClickSound.play();
     }
-  }
-  const disabled = power && has ? "" : "pointer-events-none opacity-40"
+  };
+  const disabled = power && has ? "" : "pointer-events-none opacity-40";
 
-  const hintIn = (t: string) => () => setHint(t)
-  const hintOut = () => setHint("")
+  const hintIn = (t: string) => () => setHint(t);
+  const hintOut = () => setHint("");
 
   const toggleEvo = () => {
     if (power && has) {
-      setShowEvo((v) => !v)
-      setHint(() => (showEvo ? "" : "SHOW EVO"))
-      buttonClickSound.play()
+      setShowEvo((v) => !v);
+      setHint(() => (showEvo ? "" : "SHOW EVO"));
+      buttonClickSound.play();
     }
-  }
+  };
 
   const togglePower = () => {
     setPower((p) => {
-      const n = !p
-      if (n) powerOnSound.play()
-      else powerOffSound.play()
-      return n
-    })
-  }
+      const n = !p;
+      if (n) powerOnSound.play();
+      else powerOffSound.play();
+      return n;
+    });
+  };
 
   const startDragging = (e: React.MouseEvent | React.TouchEvent) => {
-    const cX = "touches" in e ? e.touches[0].clientX : e.clientX
-    const cY = "touches" in e ? e.touches[0].clientY : e.clientY
-    setDragging(true)
-    dragStartRef.current = { x: cX - pos.x, y: cY - pos.y }
-  }
-  const stopDragging = () => setDragging(false)
+    const cX = "touches" in e ? e.touches[0].clientX : e.clientX;
+    const cY = "touches" in e ? e.touches[0].clientY : e.clientY;
+    setDragging(true);
+    dragStartRef.current = { x: cX - pos.x, y: cY - pos.y };
+  };
+  const stopDragging = () => setDragging(false);
   const drag = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!isDragging) return
-    const cX = "touches" in e ? e.touches[0].clientX : e.clientX
-    const cY = "touches" in e ? e.touches[0].clientY : e.clientY
-    setPos({ x: cX - dragStartRef.current.x, y: cY - dragStartRef.current.y })
-  }
+    if (!isDragging) return;
+    const cX = "touches" in e ? e.touches[0].clientX : e.clientX;
+    const cY = "touches" in e ? e.touches[0].clientY : e.clientY;
+    setPos({ x: cX - dragStartRef.current.x, y: cY - dragStartRef.current.y });
+  };
 
   return (
     <>
@@ -201,8 +215,8 @@ export const PokedexViewer: React.FC = () => {
           <button
             onClick={() => {
               if (power && has) {
-                setShowAll(true)
-                buttonClickSound.play()
+                setShowAll(true);
+                buttonClickSound.play();
               }
             }}
             onMouseEnter={hintIn("SHOW ALL")}
@@ -226,8 +240,8 @@ export const PokedexViewer: React.FC = () => {
           <button
             onClick={() => {
               if (power && has) {
-                removeOne(cur!.id)
-                buttonClickSound.play()
+                removeOne(cur!.id);
+                buttonClickSound.play();
               }
             }}
             onMouseEnter={hintIn("DELETE")}
@@ -295,9 +309,15 @@ export const PokedexViewer: React.FC = () => {
           {hint}
         </div>
 
-        {showEvo && power && has && (
+        {showEvo && power && has && cur && (
           <div className="absolute left-[80px] top-[80px] ml-4 z-50 pointer-events-auto">
-            <EvolutionModal name={cur!.name} />
+            <EvolutionModal
+              name={cur.name}
+              onCatch={(name) => {
+                const suggestion = { name, id: 0, image: "" };
+                setSelected(suggestion);
+              }}
+            />
           </div>
         )}
       </div>
@@ -368,6 +388,19 @@ export const PokedexViewer: React.FC = () => {
           </Transition.Child>
         </div>
       </Transition>
+
+      {selected && (
+        <CatchModal
+          name={selected.name}
+          onClose={() => {
+            setSelected(null);
+          }}
+          onCaught={(pokemon, stage) => {
+            addPokemon(pokemon, stage);
+            setSelected(null);
+          }}
+        />
+      )}
     </>
-  )
-}
+  );
+};

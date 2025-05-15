@@ -16,9 +16,12 @@ export interface CaughtEntry extends Pokemon {
 interface PokemonStore {
   caught: CaughtEntry[]
   lastCaughtId: number | null
+  evolutionTargetId: number | null
   addPokemon: (p: Pokemon, stage: number) => void
   removeOne: (id: number) => void
+  removeThree: (id: number, evolvedPokemonId?: number) => void
   clearAll: () => void
+  setEvolutionTarget: (id: number | null) => void
 }
 
 export const usePokemonStore = create<PokemonStore>()(
@@ -26,6 +29,9 @@ export const usePokemonStore = create<PokemonStore>()(
     set => ({
       caught: [],
       lastCaughtId: null,
+      evolutionTargetId: null,
+
+      setEvolutionTarget: (id) => set({ evolutionTargetId: id }),
 
       addPokemon: (p, stage) =>
         set(s => {
@@ -33,13 +39,46 @@ export const usePokemonStore = create<PokemonStore>()(
           if (ex) {
             const updated: CaughtEntry = { ...ex, count: ex.count + 1 }
             return {
-              caught: [...s.caught.filter(c => c.id !== p.id), updated],
-              lastCaughtId: p.id
+              ...s,
+              caught: s.caught.map(c => c.id === p.id ? updated : c),
+              lastCaughtId: s.evolutionTargetId === null ? updated.id : s.lastCaughtId
+            }
+          }
+          const newPokemon = { ...p, count: 1, stage }
+          return {
+            ...s,
+            caught: [...s.caught, newPokemon],
+            lastCaughtId: s.evolutionTargetId === null ? newPokemon.id : s.lastCaughtId
+          }
+        }),
+
+      removeThree: (id, evolvedPokemonId) =>
+        set(s => {
+          const ex = s.caught.find(c => c.id === id)
+          if (!ex || ex.count < 3) return s
+          const newCount = ex.count - 3
+          if (newCount <= 0) {
+            const newCaught = s.caught.filter(c => c.id !== id)
+            if (newCaught.length === 0) {
+              return {
+                ...s,
+                caught: [],
+                lastCaughtId: null,
+                evolutionTargetId: null
+              }
+            }
+            return {
+              ...s,
+              caught: newCaught,
+              lastCaughtId: evolvedPokemonId || s.lastCaughtId,
+              evolutionTargetId: null
             }
           }
           return {
-            caught: [...s.caught, { ...p, count: 1, stage }],
-            lastCaughtId: p.id
+            ...s,
+            caught: s.caught.map(c =>
+              c.id === id ? { ...c, count: newCount } : c
+            )
           }
         }),
 
@@ -49,14 +88,18 @@ export const usePokemonStore = create<PokemonStore>()(
           if (!ex) return s
           if (ex.count > 1)
             return {
+              ...s,
               caught: s.caught.map(c =>
                 c.id === id ? { ...c, count: c.count - 1 } : c
               )
             }
-          return { caught: s.caught.filter(c => c.id !== id) }
+          return {
+            ...s,
+            caught: s.caught.filter(c => c.id !== id)
+          }
         }),
 
-      clearAll: () => set({ caught: [], lastCaughtId: null })
+      clearAll: () => set({ caught: [], lastCaughtId: null, evolutionTargetId: null })
     }),
     { name: 'pokemon-storage-v2' }
   )
