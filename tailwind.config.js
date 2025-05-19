@@ -1,6 +1,9 @@
 /** @type {import('tailwindcss').Config} */
-module.exports = {
-  content: ['./index.html', './src/**/*.{ts,tsx,js,jsx}'],
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
   theme: {
     extend: {
       fontFamily: {
@@ -9,11 +12,11 @@ module.exports = {
         vt323: ["'VT323'", 'monospace'],
       },
       colors: {
-        'bg-default':   '#1E1E1E',
+        'bg-primary': '#1E1E1E',
         'bg-secondary': '#2A2A2A',
-        'accent-yellow':'#FBBF24',
-        'accent-orange':'#FB923C',
         'text-default': '#E5E7EB',
+        'accent-yellow': '#FBBF24',
+        'accent-orange': '#FB923C',
       },
       boxShadow: {
         'button-blue': '0 0 6px 2px rgb(0 128 255 / 0.8)',
@@ -23,6 +26,15 @@ module.exports = {
         'button-green': '0 0 6px 2px rgb(0 255 0 / 0.8)',
         'button-green-hover': '0 0 4px 1px rgb(0 255 0 / 0.4)',
       },
+      keyframes: {
+        breathing: {
+          '0%, 100%': { transform: 'scale(1)' },
+          '50%': { transform: 'scale(1.05)' }
+        }
+      },
+      animation: {
+        'breathing': 'breathing 1s ease-in-out infinite'
+      }
     },
   },
   plugins: [],

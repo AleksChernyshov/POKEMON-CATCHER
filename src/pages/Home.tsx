@@ -4,23 +4,15 @@ import React, {
   ChangeEvent,
   useEffect,
   useRef,
+  useMemo,
 } from "react";
-import { useQuery } from "@apollo/client";
-import { GET_POKEMON_LIST } from "../graphql/queries";
 import { SearchInput, Suggestion } from "../components/SearchInput";
 import { CatchModal } from "../components/CatchModal";
 import { usePokemonStore } from "../store/pokemonStore";
+import { usePokemonListStore } from "../store/pokemonListStore";
 import { PokedexViewer } from "../components/PokedexViewer";
+import { LoadingScreen } from "../components/LoadingScreen";
 import pikaGif from "../assets/pika.gif";
-
-interface PokemonListData {
-  pokemons: { results: Suggestion[] };
-}
-
-interface PokemonListVars {
-  limit: number;
-  offset: number;
-}
 
 const Home: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -28,19 +20,27 @@ const Home: React.FC = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selected, setSelected] = useState<Suggestion | null>(null);
 
-  const { data: listData, loading: listLoading } = useQuery<
-    PokemonListData,
-    PokemonListVars
-  >(GET_POKEMON_LIST, { variables: { limit: 251, offset: 0 } });
-
+  const {
+    pokemons,
+    isLoading: listLoading,
+    isFullyLoaded,
+  } = usePokemonListStore();
   const addPokemon = usePokemonStore((s) => s.addPokemon);
 
-  const lower = searchTerm.trim().toLowerCase();
-  const suggestions =
-    listData?.pokemons.results.filter(
-      (p) =>
-        p.name.toLowerCase().includes(lower) && p.name.toLowerCase() !== lower
-    ) ?? [];
+  const suggestions = useMemo(() => {
+    const lower = searchTerm?.trim()?.toLowerCase() || "";
+    return pokemons
+      .filter(
+        (p) =>
+          p?.name?.toLowerCase()?.includes(lower) &&
+          p?.name?.toLowerCase() !== lower
+      )
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        image: p.image,
+      }));
+  }, [pokemons, searchTerm]);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -50,7 +50,7 @@ const Home: React.FC = () => {
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && lower) {
+    if (e.key === "Enter" && searchTerm.trim()) {
       e.preventDefault();
       setShowSuggestions(false);
       setIsFocused(false);
@@ -86,6 +86,10 @@ const Home: React.FC = () => {
     }
   }, [showSuggestions]);
 
+  if (listLoading || !isFullyLoaded || !pokemons?.length) {
+    return <LoadingScreen />;
+  }
+
   return (
     <div className="flex h-full items-start justify-center pt-20 px-4">
       <div
@@ -103,7 +107,6 @@ const Home: React.FC = () => {
             showSuggestions={showSuggestions}
             listLoading={listLoading}
             suggestions={suggestions}
-            loading={false}
             onFocus={() => {
               if (searchTerm.trim() !== "") {
                 setShowSuggestions(true);

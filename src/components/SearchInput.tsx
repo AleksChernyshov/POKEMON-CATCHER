@@ -8,8 +8,8 @@ import React, {
 import pokeball from "../assets/pokeball.png";
 import particles from "../assets/particles_bg.png";
 import caughtBadge from "../assets/CAUGHT.png";
-import { findStage } from "../utils/evolution";
 import { usePokemonStore } from "../store/pokemonStore";
+import { usePokemonListStore } from "../store/pokemonListStore";
 import { Howl } from "howler";
 
 export interface Suggestion {
@@ -24,7 +24,6 @@ interface SearchInputProps {
   showSuggestions: boolean;
   listLoading: boolean;
   suggestions: Suggestion[];
-  loading: boolean;
   onFocus: () => void;
   onBlur: () => void;
   onChange: (e: ChangeEvent<HTMLInputElement>) => void;
@@ -32,37 +31,17 @@ interface SearchInputProps {
   onSelect: (name: string) => void;
 }
 
-const CHANCE_LABEL = ["90%", "50%", "30%"];
-
 const SuggestionCard: React.FC<{
   p: Suggestion;
   caught: boolean;
   onSelect: (n: string) => void;
 }> = ({ p, caught, onSelect }) => {
-  const [stage, setStage] = useState<0 | 1 | 2>(0);
+  const pokemon = usePokemonListStore((state) =>
+    state.pokemons.find((pok) => pok.id === p.id)
+  );
 
-  useEffect(() => {
-    let cancel = false;
-    (async () => {
-      try {
-        const sp = await fetch(
-          `https://pokeapi.co/api/v2/pokemon-species/${p.id}/`
-        ).then((r) => r.json());
-        const evoUrl: string | undefined = sp?.evolution_chain?.url;
-        if (!evoUrl) return;
-        const chain = await fetch(evoUrl).then((r) => r.json());
-        const st = findStage(chain.chain, p.name.toLowerCase());
-        if (!cancel && st !== null) setStage(st as 0 | 1 | 2);
-      } catch (err) {
-        console.error("Failed to load evolution chain:", err);
-      }
-    })();
-    return () => {
-      cancel = true;
-    };
-  }, [p]);
-
-  const chance = CHANCE_LABEL[stage];
+  const catchChance = pokemon?.catchChance ?? 0.9;
+  const chanceLabel = `${Math.round(catchChance * 100)}%`;
 
   return (
     <div
@@ -72,12 +51,13 @@ const SuggestionCard: React.FC<{
                  hover:border-accent-orange hover:shadow-[0_0_10px_rgba(251,191,36,0.9)]"
     >
       <span className="absolute top-1 right-1 bg-accent-yellow text-black text-xs font-bold px-2 pb-1 pt-2 rounded-full">
-        {chance}
+        {chanceLabel}
       </span>
 
       <img
         src={p.image}
         alt={p.name}
+        loading="lazy"
         className={`relative z-10 w-32 h-32 object-contain mb-1 transition-transform duration-200
                     group-hover:scale-[130%]`}
       />
@@ -111,7 +91,6 @@ export const SearchInput: React.FC<SearchInputProps> = ({
   showSuggestions,
   listLoading,
   suggestions,
-  loading,
   onFocus,
   onBlur,
   onChange,
@@ -312,8 +291,6 @@ export const SearchInput: React.FC<SearchInputProps> = ({
             No pokémon found
           </div>
         )}
-
-      {loading && <p className="mt-4 text-text-default">Loading details…</p>}
     </div>
   );
 };

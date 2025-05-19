@@ -354,8 +354,11 @@ export const PokedexViewer: React.FC = () => {
             <EvolutionModal
               name={cur.name}
               onCatch={(name) => {
-                const suggestion = { name, id: 0, image: "" };
-                setSelected(suggestion);
+                setSelected({
+                  name,
+                  id: 0,
+                  image: "",
+                });
                 windSound.play();
               }}
             />

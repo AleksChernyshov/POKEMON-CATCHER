@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { useApolloClient } from "@apollo/client";
-import { GET_POKEMON_BY_NAME } from "../graphql/queries";
 import { useCatchPokemon } from "../hooks/useCatchPokemon";
 import { Pokemon } from "../store/pokemonStore";
+import { usePokemonListStore } from "../store/pokemonListStore";
 import { Howl } from "howler";
 
 import catch1 from "../assets/catching-1.gif";
@@ -39,8 +38,10 @@ export const CatchModal: React.FC<CatchModalProps> = ({
   onClose,
   onCaught,
 }) => {
-  const client = useApolloClient();
   const { attemptCatch } = useCatchPokemon();
+  const pokemonFromStore = usePokemonListStore((state) =>
+    state.pokemons.find((p) => p.name.toLowerCase() === name.toLowerCase())
+  );
 
   const [phase, setPhase] = useState<Phase>("initial");
   const [pokemon, setPokemon] = useState<Pokemon | null>(null);
@@ -49,51 +50,72 @@ export const CatchModal: React.FC<CatchModalProps> = ({
     stage: number;
   } | null>(null);
   const [showOutcome, setShowOutcome] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
     const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
     const run = async () => {
-      // Initial phase - start animation
-      setPhase("initial");
-      await sleep(INITIAL_MS);
-      if (!mounted) return;
+      try {
+        // Initial phase - start animation
+        setPhase("initial");
+        await sleep(INITIAL_MS);
+        if (!mounted) return;
 
-      // Pending phase - fetch Pokemon data and attempt catch
-      setPhase("pending");
-      const { data } = await client.query<{ pokemon: Pokemon }>({
-        query: GET_POKEMON_BY_NAME,
-        variables: { name: name.toLowerCase() },
-        fetchPolicy: "network-only",
-      });
-      if (!mounted) return;
-      setPokemon(data.pokemon);
+        // Pending phase - get Pokemon data from store and attempt catch
+        setPhase("pending");
 
-      const res = await attemptCatch(data.pokemon);
-      if (!mounted) return;
-      setOutcome(res);
+        if (!pokemonFromStore) {
+          throw new Error(`Pokemon ${name} not found in store`);
+        }
 
-      // Post-throw animation
-      setPhase("post");
-      await sleep(POST_MS);
-      if (!mounted) return;
+        // Convert PokemonListItem to Pokemon
+        const pokemonData: Pokemon = {
+          id: pokemonFromStore.id,
+          name: pokemonFromStore.name,
+          sprites: pokemonFromStore.sprites || {
+            front_default: pokemonFromStore.image,
+          },
+          species: pokemonFromStore.species || { url: "" },
+        };
 
-      // Ball shaking animation
-      setPhase("preResult");
-      await sleep(PRE_RES_MS);
-      if (!mounted) return;
+        setPokemon(pokemonData);
 
-      // Show final result
-      setPhase("result");
-      setShowOutcome(true);
+        // Add random delay between 1-2 seconds for animation
+        await sleep(Math.random() * 1000 + 1000);
+
+        const res = await attemptCatch(pokemonData);
+        if (!mounted) return;
+        setOutcome(res);
+
+        // Post-throw animation
+        setPhase("post");
+        await sleep(POST_MS);
+        if (!mounted) return;
+
+        // Ball shaking animation
+        setPhase("preResult");
+        await sleep(PRE_RES_MS);
+        if (!mounted) return;
+
+        // Show final result
+        setPhase("result");
+        setShowOutcome(true);
+      } catch (err) {
+        console.error("Failed to catch pokemon:", err);
+        setError(
+          err instanceof Error ? err.message : "Failed to catch pokemon"
+        );
+        onClose();
+      }
     };
 
     run();
     return () => {
       mounted = false;
     };
-  }, [name, client, attemptCatch]);
+  }, [name, pokemonFromStore, attemptCatch, onClose]);
 
   useEffect(() => {
     if (showOutcome && outcome) {
@@ -115,6 +137,10 @@ export const CatchModal: React.FC<CatchModalProps> = ({
     preResult: catch4,
     result: catch5,
   }[phase];
+
+  if (error) {
+    return null;
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">

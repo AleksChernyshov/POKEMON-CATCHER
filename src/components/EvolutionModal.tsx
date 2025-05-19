@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { useApolloClient } from "@apollo/client";
-import { GET_POKEMON_BY_NAME } from "../graphql/queries";
 import pokeball from "../assets/pokeball.png";
-import { usePokemonStore } from "../store/pokemonStore";
+import { usePokemonStore, Pokemon } from "../store/pokemonStore";
+import { usePokemonListStore } from "../store/pokemonListStore";
 import { Howl } from "howler";
 
 const evoSound = new Howl({
@@ -15,96 +14,43 @@ interface Props {
   onCatch: (name: string) => void;
 }
 
-interface ChainPokemon {
-  id: number;
-  name: string;
-  sprite: string;
-  sprites: { front_default: string };
-  species: { url: string };
-}
-
 export const EvolutionModal: React.FC<Props> = ({ name, onCatch }) => {
-  const client = useApolloClient();
+  const [loading, setLoading] = useState(true);
   const caught = usePokemonStore((s) => s.caught);
   const addPokemon = usePokemonStore((s) => s.addPokemon);
   const removeThree = usePokemonStore((s) => s.removeThree);
   const setEvolutionTarget = usePokemonStore((s) => s.setEvolutionTarget);
-  const [loading, setLoading] = useState(true);
-  const [chain, setChain] = useState<ChainPokemon[]>([]);
 
-  const handleEvolution = (
-    fromPokemon: ChainPokemon,
-    toPokemon: ChainPokemon
-  ) => {
-    const fromIndex = chain.findIndex((p) => p.id === fromPokemon.id);
-    const toIndex = chain.findIndex((p) => p.id === toPokemon.id);
-    if (fromIndex !== -1 && toIndex !== -1) {
-      setEvolutionTarget(toPokemon.id);
-      addPokemon(toPokemon, toIndex);
-      removeThree(fromPokemon.id, toPokemon.id);
+  const pokemonList = usePokemonListStore((s) => s.pokemons);
+  const currentPokemon = pokemonList.find((p) => p.name === name);
+  const evolutionChain = currentPokemon?.evolutionChain || [];
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleEvolution = (fromId: number, toId: number) => {
+    const toPokemon = pokemonList.find((p) => p.id === toId);
+    if (toPokemon) {
+      const pokemon: Pokemon = {
+        id: toPokemon.id,
+        name: toPokemon.name,
+        sprites: toPokemon.sprites || { front_default: toPokemon.image },
+        species: toPokemon.species || { url: "" },
+      };
+      setEvolutionTarget(toId);
+      addPokemon(
+        pokemon,
+        evolutionChain.findIndex((p) => p.id === toId)
+      );
+      removeThree(fromId, toId);
       setEvolutionTarget(null);
     }
   };
-
-  useEffect(() => {
-    let mounted = true;
-    const spriteUrl = (id: string | number) =>
-      `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
-
-    (async () => {
-      try {
-        const { data } = await client.query({
-          query: GET_POKEMON_BY_NAME,
-          variables: { name },
-          fetchPolicy: "network-only",
-        });
-
-        const speciesUrl: string | undefined = data?.pokemon?.species?.url;
-        if (!speciesUrl) throw new Error("species url not found");
-
-        const species = await fetch(speciesUrl).then((r) => r.json());
-        const evoUrl: string | undefined = species?.evolution_chain?.url;
-        if (!evoUrl) {
-          if (mounted) {
-            setChain([]);
-            setLoading(false);
-          }
-          return;
-        }
-
-        const evoRes = await fetch(evoUrl).then((r) => r.json());
-
-        const list: ChainPokemon[] = [];
-        let node = evoRes.chain;
-        while (node) {
-          const { name: nm, url } = node.species;
-          const id = parseInt(url.match(/\/(\d+)\/$/)?.[1] || "0");
-          list.push({
-            id,
-            name: nm,
-            sprite: id ? spriteUrl(id) : "",
-            sprites: { front_default: spriteUrl(id) },
-            species: { url },
-          });
-          node = node.evolves_to?.[0];
-        }
-
-        if (mounted) {
-          setChain(list);
-          setLoading(false);
-        }
-      } catch {
-        if (mounted) {
-          setChain([]);
-          setLoading(false);
-        }
-      }
-    })();
-
-    return () => {
-      mounted = false;
-    };
-  }, [name, client]);
 
   return (
     <div
@@ -142,14 +88,14 @@ export const EvolutionModal: React.FC<Props> = ({ name, onCatch }) => {
             </image>
           </svg>
         </div>
-      ) : chain.length === 0 ? (
+      ) : evolutionChain.length === 0 ? (
         <p className="text-center text-text-default/90">No evolution data</p>
       ) : (
         <div className="flex items-center justify-center gap-4">
-          {chain.map((p, i) => {
+          {evolutionChain.map((p, i) => {
             const isCaught = caught.some((c) => c.name === p.name);
             const pokemonCount = caught.find((c) => c.id === p.id)?.count || 0;
-            const nextPokemon = chain[i + 1];
+            const nextPokemon = evolutionChain[i + 1];
             const canEvolve = pokemonCount >= 3 && nextPokemon;
 
             return (
@@ -174,7 +120,7 @@ export const EvolutionModal: React.FC<Props> = ({ name, onCatch }) => {
                     {canEvolve && (
                       <button
                         onClick={() => {
-                          handleEvolution(p, nextPokemon);
+                          handleEvolution(p.id, nextPokemon.id);
                           evoSound.play();
                         }}
                         className="absolute inset-0 flex items-center justify-center bg-cyan-600/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"
@@ -211,7 +157,7 @@ export const EvolutionModal: React.FC<Props> = ({ name, onCatch }) => {
                     {p.name}
                   </span>
                 </div>
-                {i < chain.length - 1 && (
+                {i < evolutionChain.length - 1 && (
                   <span className="text-3xl text-accent-yellow/80 drop-shadow-[0_0_10px_rgba(251,191,36,1)]">
                     →
                   </span>
