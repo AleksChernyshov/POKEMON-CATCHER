@@ -12,11 +12,13 @@ import { CatchModal } from "../components/CatchModal";
 import type { Suggestion } from "../components/SearchInput";
 
 export const PokedexViewer: React.FC = () => {
+  // Store connections for Pokemon management
   const caught = usePokemonStore((s) => s.caught);
   const lastCaughtId = usePokemonStore((s) => s.lastCaughtId);
   const removeOne = usePokemonStore((s) => s.removeOne);
   const addPokemon = usePokemonStore((s) => s.addPokemon);
 
+  // State management for UI interactions
   const [idx, setIdx] = useState(0);
   const [power, setPower] = useState(false);
   const [showAll, setShowAll] = useState(false);
@@ -26,20 +28,38 @@ export const PokedexViewer: React.FC = () => {
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const [selected, setSelected] = useState<Suggestion | null>(null);
 
+  // DOM references for interactions
   const modalRef = useRef<HTMLDivElement>(null);
   const dragStartRef = useRef({ x: 0, y: 0 });
   const prevLen = useRef(0);
 
+  // Sound effect initialization
   const powerOnSound = new Howl({
     src: ["/POKEMON-CATCHER/assets/power-on.mp3"],
   });
   const powerOffSound = new Howl({
     src: ["/POKEMON-CATCHER/assets/power-off.mp3"],
+    volume: 0.2,
   });
   const buttonClickSound = new Howl({
     src: ["/POKEMON-CATCHER/assets/button.mp3"],
   });
+  const holoScreenSound = new Howl({
+    src: ["/POKEMON-CATCHER/assets/holo-screan.mp3"],
+    volume: 0.4,
+  });
+  const modalSlideSound = new Howl({
+    src: ["/POKEMON-CATCHER/assets/modal-slide.mp3"],
+  });
+  const deleteSound = new Howl({
+    src: ["/POKEMON-CATCHER/assets/delete.mp3"],
+  });
+  const windSound = new Howl({
+    src: ["/POKEMON-CATCHER/assets/wind2.mp3"],
+    volume: 0.4,
+  });
 
+  // Modal click outside handler
   useEffect(() => {
     if (!showAll) return;
     const outside = (e: MouseEvent) => {
@@ -50,6 +70,7 @@ export const PokedexViewer: React.FC = () => {
     return () => document.removeEventListener("mousedown", outside);
   }, [showAll]);
 
+  // Pokemon selection and list management
   useEffect(() => {
     if (lastCaughtId !== null) {
       const newIdx = caught.findIndex((p) => p.id === lastCaughtId);
@@ -72,7 +93,9 @@ export const PokedexViewer: React.FC = () => {
 
   const has = caught.length > 0;
   const cur: CaughtEntry | null = has ? caught[idx] : null;
+  const disabled = power && has ? "" : "pointer-events-none opacity-40";
 
+  // Navigation handlers
   const prev = () => {
     if (power && has) {
       setIdx((i) => (i ? i - 1 : caught.length - 1));
@@ -85,14 +108,15 @@ export const PokedexViewer: React.FC = () => {
       buttonClickSound.play();
     }
   };
-  const disabled = power && has ? "" : "pointer-events-none opacity-40";
 
+  // UI interaction handlers
   const hintIn = (t: string) => () => setHint(t);
   const hintOut = () => setHint("");
 
   const toggleEvo = () => {
     if (power && has) {
-      setShowEvo((v) => !v);
+      holoScreenSound.play();
+      setShowEvo(!showEvo);
       setHint(() => (showEvo ? "" : "SHOW EVO"));
       buttonClickSound.play();
     }
@@ -107,6 +131,12 @@ export const PokedexViewer: React.FC = () => {
     });
   };
 
+  const closeModal = () => {
+    setShowAll(false);
+    modalSlideSound.play();
+  };
+
+  // Drag functionality handlers
   const startDragging = (e: React.MouseEvent | React.TouchEvent) => {
     const cX = "touches" in e ? e.touches[0].clientX : e.clientX;
     const cY = "touches" in e ? e.touches[0].clientY : e.clientY;
@@ -123,6 +153,7 @@ export const PokedexViewer: React.FC = () => {
 
   return (
     <>
+      {/* Main Pokedex container with drag functionality */}
       <div
         className="relative mx-auto mt-12 w-[512px] h-[512px] select-none"
         style={{
@@ -140,6 +171,7 @@ export const PokedexViewer: React.FC = () => {
         onTouchEnd={stopDragging}
         onTouchMove={drag}
       >
+        {/* Hologram effect with animated beams */}
         {power && showEvo && (
           <div
             className="absolute left-[48px] top-[51px] w-[60px] h-[60px] rounded-full pointer-events-none"
@@ -148,39 +180,39 @@ export const PokedexViewer: React.FC = () => {
             }}
           />
         )}
+
         {power && showEvo && (
           <>
             <div className="beam absolute left-[60px] top-[66px] w-[60px] h-px origin-left rotate-[12deg]" />
-            <div className="beam absolute left-[96px] top-[100px] w-[460px] h-px origin-left rotate-[26deg]" />
             <div className="beam absolute left-[90px] top-[60px] w-[400px] h-px origin-left rotate-[2deg]" />
-            <div className="beam absolute left-[54px] top-[80px] w-[200px] h-px origin-left  rotate-[79deg]" />
+            <div className="beam absolute left-[54px] top-[80px] w-[200px] h-px origin-left rotate-[79deg]" />
+            <div className="beam absolute left-[96px] top-[100px] w-[460px] h-px origin-left rotate-[26deg]" />
           </>
         )}
-        {power && (
+
+        {/* Pokemon display section */}
+        {power && cur && (
           <>
-            {cur && (
-              <>
-                <img
-                  src={cur.sprites.front_default}
-                  alt={cur.name}
-                  className="absolute left-[68px] top-[150px] w-[152px] h-[124px] rounded object-contain"
-                />
-                <div className="absolute right-[63px] top-[150px] w-[153px] h-[66px] flex items-center justify-center text-accent-yellow text-lg font-bold">
-                  {cur.name}
-                </div>
-                <div className="absolute right-[162px] bottom-[107px] w-[57px] h-[40px] flex items-center justify-center text-white font-bold text-lg">
-                  ×{cur.count}
-                </div>
-                <div className="absolute right-[53px] bottom-[108px] w-[90px] h-[38px] flex items-center justify-center text-accent-yellow font-bold text-lg">
-                  Stage {cur.stage + 1}
-                </div>
-              </>
-            )}
+            <img
+              src={cur.sprites.front_default}
+              alt={cur.name}
+              className="absolute left-[68px] top-[150px] w-[152px] h-[124px] rounded object-contain"
+            />
+            <div className="absolute right-[63px] top-[150px] w-[153px] h-[66px] flex items-center justify-center text-lg font-bold text-accent-yellow/80">
+              {cur.name}
+            </div>
+            <div className="absolute right-[162px] bottom-[107px] w-[57px] h-[40px] flex items-center justify-center text-white font-bold text-lg">
+              ×{cur.count}
+            </div>
+            <div className="absolute right-[53px] bottom-[108px] w-[90px] h-[38px] flex items-center justify-center font-bold text-lg text-accent-yellow/80">
+              Stage {cur.stage + 1}
+            </div>
             <span className="pointer-events-none absolute left-[68px] top-[150px] w-[152px] h-[124px] rounded bg-gradient-to-br from-white/25 to-transparent" />
             <span className="pointer-events-none absolute right-[63px] top-[150px] w-[153px] h-[66px] rounded bg-gradient-to-br from-white/20 to-transparent" />
           </>
         )}
 
+        {/* Navigation controls */}
         <button
           onClick={prev}
           onMouseEnter={hintIn("PREVIOUS")}
@@ -211,11 +243,13 @@ export const PokedexViewer: React.FC = () => {
           />
         </button>
 
+        {/* Show all Pokemon button */}
         <div className="absolute left-[95px] bottom-[168px] flex flex-col items-center gap-1 w-[60px] h-[45px]">
           <button
             onClick={() => {
               if (power && has) {
                 setShowAll(true);
+                modalSlideSound.play();
                 buttonClickSound.play();
               }
             }}
@@ -227,7 +261,7 @@ export const PokedexViewer: React.FC = () => {
               className={`absolute inset-0 rounded-md border-2 border-transparent transition-colors duration-50 ${
                 power &&
                 has &&
-                "group-hover:shadow-[0_0_6px_2px_rgba(0,128,255,0.8)] group-active:border-blue-500"
+                "group-hover:shadow-button-blue group-active:border-blue-500"
               }`}
             />
           </button>
@@ -236,11 +270,13 @@ export const PokedexViewer: React.FC = () => {
           </span>
         </div>
 
+        {/* Delete Pokemon button */}
         <div className="absolute left-[155px] bottom-[168px] flex flex-col items-center gap-1 w-[60px] h-[45px]">
           <button
             onClick={() => {
               if (power && has) {
                 removeOne(cur!.id);
+                deleteSound.play();
                 buttonClickSound.play();
               }
             }}
@@ -252,7 +288,7 @@ export const PokedexViewer: React.FC = () => {
               className={`absolute inset-0 rounded-md border-2 border-transparent transition-colors duration-50 ${
                 power &&
                 has &&
-                "group-hover:shadow-[0_0_6px_2px_rgba(255,0,0,0.8)] group-active:border-red-500"
+                "group-hover:shadow-button-red group-active:border-red-500"
               }`}
             />
           </button>
@@ -261,6 +297,7 @@ export const PokedexViewer: React.FC = () => {
           </span>
         </div>
 
+        {/* Evolution toggle button */}
         <div className="absolute left-[191px] bottom-[108px] flex flex-col items-center gap-1 w-[30px] h-[45px]">
           <button
             onClick={toggleEvo}
@@ -273,8 +310,8 @@ export const PokedexViewer: React.FC = () => {
                 power &&
                 has &&
                 (showEvo
-                  ? "shadow-[0_0_6px_2px_rgba(255,255,0,0.8)] border-yellow-400"
-                  : "group-hover:shadow-[0_0_6px_2px_rgba(255,255,0,0.4)] group-active:shadow-[0_0_6px_2px_rgba(255,255,0,0.8)] group-active:border-yellow-400")
+                  ? "shadow-button-yellow border-yellow-400"
+                  : "group-hover:shadow-button-yellow-hover group-active:shadow-button-yellow group-active:border-yellow-400")
               }`}
             />
           </button>
@@ -283,6 +320,7 @@ export const PokedexViewer: React.FC = () => {
           </span>
         </div>
 
+        {/* Power button */}
         <div className="absolute left-[62px] bottom-[189px] w-[26px] h-[26px]">
           <button
             onClick={togglePower}
@@ -293,8 +331,8 @@ export const PokedexViewer: React.FC = () => {
             <span
               className={`absolute inset-0 rounded-full border-2 transition-colors duration-50 ${
                 power
-                  ? "border-green-500 shadow-[0_0_6px_2px_rgba(0,255,0,0.8)]"
-                  : "border-transparent group-hover:shadow-[0_0_4px_1px_rgba(0,255,0,0.4)]"
+                  ? "border-green-500 shadow-button-green"
+                  : "border-transparent group-hover:shadow-button-green-hover"
               }`}
             />
             <img
@@ -305,10 +343,12 @@ export const PokedexViewer: React.FC = () => {
           </button>
         </div>
 
+        {/* Hint display */}
         <div className="pointer-events-none absolute left-[152px] -translate-x-1/2 bottom-[83px] text-center font-press-start text-[7px] text-accent-yellow uppercase">
           {hint}
         </div>
 
+        {/* Evolution modal */}
         {showEvo && power && has && cur && (
           <div className="absolute left-[80px] top-[80px] ml-4 z-50 pointer-events-auto">
             <EvolutionModal
@@ -316,12 +356,14 @@ export const PokedexViewer: React.FC = () => {
               onCatch={(name) => {
                 const suggestion = { name, id: 0, image: "" };
                 setSelected(suggestion);
+                windSound.play();
               }}
             />
           </div>
         )}
       </div>
 
+      {/* All Pokemon list modal */}
       <Transition
         show={showAll && has}
         enter="transition-opacity duration-500"
@@ -333,7 +375,7 @@ export const PokedexViewer: React.FC = () => {
       >
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/75"
-          onClick={() => setShowAll(false)}
+          onClick={closeModal}
         >
           <Transition.Child
             enter="transition-transform duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
@@ -350,17 +392,15 @@ export const PokedexViewer: React.FC = () => {
               <img
                 src={pallet}
                 alt=""
-                className="absolute inset-0 h-full w-full  select-none pointer-events-none
+                className="absolute inset-0 h-full w-full select-none pointer-events-none
                [clip-path:inset(0_100px_0_100px)]"
               />
-
               <img
                 src={pallet}
                 alt=""
                 className="absolute inset-y-0 left-0 w-[150px] h-full object-cover select-none pointer-events-none"
                 style={{ objectPosition: "left top" }}
               />
-
               <img
                 src={pallet}
                 alt=""
@@ -370,7 +410,7 @@ export const PokedexViewer: React.FC = () => {
 
               <div className="flex justify-center items-center -mt-4 mb-7">
                 <button
-                  onClick={() => setShowAll(false)}
+                  onClick={closeModal}
                   className="absolute -top-4 right-0 flex h-8 w-8 pt-1.5 items-center justify-center
                         rounded-full bg-red-600/80 text-xl leading-none text-white hover:bg-red-600 transition"
                 >
@@ -389,6 +429,7 @@ export const PokedexViewer: React.FC = () => {
         </div>
       </Transition>
 
+      {/* Pokemon catch modal */}
       {selected && (
         <CatchModal
           name={selected.name}

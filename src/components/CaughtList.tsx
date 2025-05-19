@@ -1,9 +1,14 @@
 import React from "react";
 import { usePokemonStore, CaughtEntry } from "../store/pokemonStore";
+import { Howl } from "howler";
 
 export const CaughtList: React.FC = () => {
   const caught = usePokemonStore((s) => s.caught);
   const removeOne = usePokemonStore((s) => s.removeOne);
+
+  const deleteSound = new Howl({
+    src: ["/POKEMON-CATCHER/assets/delete.mp3"],
+  });
 
   if (!caught.length) return null;
 
@@ -27,7 +32,10 @@ export const CaughtList: React.FC = () => {
           )}
 
           <button
-            onClick={() => removeOne(p.id)}
+            onClick={() => {
+              removeOne(p.id);
+              deleteSound.play();
+            }}
             aria-label="Remove one"
             className="absolute -top-3 -right-3 flex h-8 w-8 pt-1.5 items-center justify-center rounded-full
                        bg-red-600 text-xl text-white shadow-lg transition

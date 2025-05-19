@@ -10,6 +10,7 @@ import particles from "../assets/particles_bg.png";
 import caughtBadge from "../assets/CAUGHT.png";
 import { findStage } from "../utils/evolution";
 import { usePokemonStore } from "../store/pokemonStore";
+import { Howl } from "howler";
 
 export interface Suggestion {
   id: number;
@@ -121,9 +122,33 @@ export const SearchInput: React.FC<SearchInputProps> = ({
   const [phase, setPhase] = useState<Phase>("left");
   const [duration, setDuration] = useState(0);
   const [enableT, setEnableT] = useState(false);
+  const windSoundRef = useRef<Howl | null>(null);
+  const selectWindSoundRef = useRef<Howl | null>(null);
 
   const caught = usePokemonStore((s) => s.caught);
   const caughtSet = new Set(caught.map((c) => c.name.toLowerCase()));
+
+  useEffect(() => {
+    windSoundRef.current = new Howl({
+      src: ["/POKEMON-CATCHER/assets/wind.mp3"],
+      loop: true,
+      volume: 0.4,
+    });
+
+    selectWindSoundRef.current = new Howl({
+      src: ["/POKEMON-CATCHER/assets/wind2.mp3"],
+      volume: 0.4,
+    });
+
+    return () => {
+      if (windSoundRef.current) {
+        windSoundRef.current.stop();
+      }
+      if (selectWindSoundRef.current) {
+        selectWindSoundRef.current.stop();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (isFocused) {
@@ -135,10 +160,18 @@ export const SearchInput: React.FC<SearchInputProps> = ({
         setEnableT(true);
         setPhase("inside");
       });
+      if (windSoundRef.current) {
+        windSoundRef.current.stop();
+        windSoundRef.current.volume(0.4);
+        windSoundRef.current.play();
+      }
     } else {
       setDuration(EXIT_MS);
       setEnableT(true);
       setPhase("right");
+      if (windSoundRef.current) {
+        windSoundRef.current.stop();
+      }
     }
   }, [isFocused]);
 
@@ -152,6 +185,13 @@ export const SearchInput: React.FC<SearchInputProps> = ({
 
   const ballX =
     phase === "inside" ? INSIDE_X : phase === "right" ? RIGHT_X : LEFT_X;
+
+  const handleSelect = (name: string) => {
+    if (selectWindSoundRef.current) {
+      selectWindSoundRef.current.play();
+    }
+    onSelect(name);
+  };
 
   return (
     <div ref={containerRef} className="relative">
@@ -257,7 +297,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
                   key={p.id}
                   p={p}
                   caught={caughtSet.has(p.name.toLowerCase())}
-                  onSelect={onSelect}
+                  onSelect={handleSelect}
                 />
               ))}
             </div>

@@ -3,6 +3,12 @@ import { useApolloClient } from "@apollo/client";
 import { GET_POKEMON_BY_NAME } from "../graphql/queries";
 import pokeball from "../assets/pokeball.png";
 import { usePokemonStore } from "../store/pokemonStore";
+import { Howl } from "howler";
+
+const evoSound = new Howl({
+  src: ["/POKEMON-CATCHER/assets/evo.mp3"],
+  volume: 0.4,
+});
 
 interface Props {
   name: string;
@@ -167,7 +173,10 @@ export const EvolutionModal: React.FC<Props> = ({ name, onCatch }) => {
                     />
                     {canEvolve && (
                       <button
-                        onClick={() => handleEvolution(p, nextPokemon)}
+                        onClick={() => {
+                          handleEvolution(p, nextPokemon);
+                          evoSound.play();
+                        }}
                         className="absolute inset-0 flex items-center justify-center bg-cyan-600/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"
                       >
                         <span className="text-accent-yellow text-lg font-bold">

@@ -3,12 +3,24 @@ import { useApolloClient } from "@apollo/client";
 import { GET_POKEMON_BY_NAME } from "../graphql/queries";
 import { useCatchPokemon } from "../hooks/useCatchPokemon";
 import { Pokemon } from "../store/pokemonStore";
+import { Howl } from "howler";
 
 import catch1 from "../assets/catching-1.gif";
 import catch2 from "../assets/catching-2.gif";
 import catch3 from "../assets/catching-3.gif";
 import catch4 from "../assets/catching-4.gif";
 import catch5 from "../assets/catching-5.png";
+
+const wowSounds = [
+  new Howl({ src: ["/POKEMON-CATCHER/assets/wow1.mp3"] }),
+  new Howl({ src: ["/POKEMON-CATCHER/assets/wow2.mp3"] }),
+  new Howl({ src: ["/POKEMON-CATCHER/assets/wow3.mp3"] }),
+  new Howl({ src: ["/POKEMON-CATCHER/assets/wow4.mp3"] }),
+];
+
+const failSound = new Howl({
+  src: ["/POKEMON-CATCHER/assets/ba-dum-tss.mp3"],
+});
 
 interface CatchModalProps {
   name: string;
@@ -43,10 +55,12 @@ export const CatchModal: React.FC<CatchModalProps> = ({
     const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
     const run = async () => {
+      // Initial phase - start animation
       setPhase("initial");
       await sleep(INITIAL_MS);
       if (!mounted) return;
 
+      // Pending phase - fetch Pokemon data and attempt catch
       setPhase("pending");
       const { data } = await client.query<{ pokemon: Pokemon }>({
         query: GET_POKEMON_BY_NAME,
@@ -60,14 +74,17 @@ export const CatchModal: React.FC<CatchModalProps> = ({
       if (!mounted) return;
       setOutcome(res);
 
+      // Post-throw animation
       setPhase("post");
       await sleep(POST_MS);
       if (!mounted) return;
 
+      // Ball shaking animation
       setPhase("preResult");
       await sleep(PRE_RES_MS);
       if (!mounted) return;
 
+      // Show final result
       setPhase("result");
       setShowOutcome(true);
     };
@@ -78,6 +95,19 @@ export const CatchModal: React.FC<CatchModalProps> = ({
     };
   }, [name, client, attemptCatch]);
 
+  useEffect(() => {
+    if (showOutcome && outcome) {
+      if (outcome.success) {
+        const randomWowSound =
+          wowSounds[Math.floor(Math.random() * wowSounds.length)];
+        randomWowSound.play();
+      } else {
+        failSound.play();
+      }
+    }
+  }, [showOutcome, outcome]);
+
+  // Map phases to corresponding background images
   const bg = {
     initial: catch1,
     pending: catch2,
@@ -102,8 +132,9 @@ export const CatchModal: React.FC<CatchModalProps> = ({
             )}
             <button
               onClick={() => {
-                if (outcome.success && pokemon)
+                if (outcome.success && pokemon) {
                   onCaught(pokemon, outcome.stage);
+                }
                 onClose();
               }}
               className="mt-4 px-6 pt-3 pb-2 bg-yellow-400 text-black font-bold rounded-lg hover:bg-yellow-300 transition"
