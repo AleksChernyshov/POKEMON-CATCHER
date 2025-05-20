@@ -1,9 +1,13 @@
 import React, { useEffect, useState } from "react";
+
+// Assets imports
 import catchThePokemon from "../assets/catch-the-pokemon.png";
 
 export const LoadingScreen: React.FC = () => {
+  // State management
   const [progress, setProgress] = useState(0);
 
+  // Progress event listener effect
   useEffect(() => {
     const handleProgress = (event: CustomEvent<number>) => {
       setProgress(event.detail);
@@ -25,6 +29,7 @@ export const LoadingScreen: React.FC = () => {
   return (
     <div className="fixed inset-0 bg-bg-default flex items-center justify-center">
       <div className="text-center max-w-md px-4">
+        {/* Loading animation */}
         <div className="relative w-64 h-64 mx-auto">
           <img
             src={catchThePokemon}
@@ -32,6 +37,8 @@ export const LoadingScreen: React.FC = () => {
             className="w-full h-full object-contain animate-breathing"
           />
         </div>
+
+        {/* Progress bar */}
         <div className="-mt-[50px]">
           <div className="w-full bg-bg-secondary rounded-full h-4 mb-4">
             <div

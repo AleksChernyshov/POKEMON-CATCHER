@@ -5,13 +5,16 @@ import React, {
   useEffect,
   useState,
 } from "react";
-import pokeball from "../assets/pokeball.png";
-import particles from "../assets/particles_bg.png";
-import caughtBadge from "../assets/CAUGHT.png";
 import { usePokemonStore } from "../store/pokemonStore";
 import { usePokemonListStore } from "../store/pokemonListStore";
 import { Howl } from "howler";
 
+// Assets imports
+import pokeball from "../assets/pokeball.png";
+import particles from "../assets/particles_bg.png";
+import caughtBadge from "../assets/CAUGHT.png";
+
+// Types and interfaces
 export interface Suggestion {
   id: number;
   name: string;
@@ -31,15 +34,27 @@ interface SearchInputProps {
   onSelect: (name: string) => void;
 }
 
+type Phase = "left" | "inside" | "right";
+
+// Animation constants
+const ENTRY_MS = 300;
+const EXIT_MS = 400;
+const LEFT_X = -70;
+const INSIDE_X = 10;
+const RIGHT_X = 600;
+
+// Suggestion card component
 const SuggestionCard: React.FC<{
   p: Suggestion;
   caught: boolean;
   onSelect: (n: string) => void;
 }> = ({ p, caught, onSelect }) => {
+  // Store connections
   const pokemon = usePokemonListStore((state) =>
     state.pokemons.find((pok) => pok.id === p.id)
   );
 
+  // Pokemon data
   const catchChance = pokemon?.catchChance ?? 0.9;
   const chanceLabel = `${Math.round(catchChance * 100)}%`;
 
@@ -50,10 +65,12 @@ const SuggestionCard: React.FC<{
                  border-2 border-transparent transition duration-200
                  hover:border-accent-orange hover:shadow-[0_0_10px_rgba(251,191,36,0.9)]"
     >
+      {/* Catch chance badge */}
       <span className="absolute top-1 right-1 bg-accent-yellow text-black text-xs font-bold px-2 pb-1 pt-2 rounded-full">
         {chanceLabel}
       </span>
 
+      {/* Pokemon image */}
       <img
         src={p.image}
         alt={p.name}
@@ -62,6 +79,7 @@ const SuggestionCard: React.FC<{
                     group-hover:scale-[130%]`}
       />
 
+      {/* Caught badge overlay */}
       {caught && (
         <img
           src={caughtBadge}
@@ -71,19 +89,13 @@ const SuggestionCard: React.FC<{
         />
       )}
 
+      {/* Pokemon name */}
       <span className="text-text-default group-hover:text-accent-yellow transition-colors duration-150">
         {p.name}
       </span>
     </div>
   );
 };
-
-type Phase = "left" | "inside" | "right";
-const ENTRY_MS = 300;
-const EXIT_MS = 400;
-const LEFT_X = -70;
-const INSIDE_X = 10;
-const RIGHT_X = 600;
 
 export const SearchInput: React.FC<SearchInputProps> = ({
   searchTerm,
@@ -97,16 +109,21 @@ export const SearchInput: React.FC<SearchInputProps> = ({
   onKeyDown,
   onSelect,
 }) => {
+  // Refs
   const containerRef = useRef<HTMLDivElement>(null);
-  const [phase, setPhase] = useState<Phase>("left");
-  const [duration, setDuration] = useState(0);
-  const [enableT, setEnableT] = useState(false);
   const windSoundRef = useRef<Howl | null>(null);
   const selectWindSoundRef = useRef<Howl | null>(null);
 
+  // State management
+  const [phase, setPhase] = useState<Phase>("left");
+  const [duration, setDuration] = useState(0);
+  const [enableT, setEnableT] = useState(false);
+
+  // Store connections
   const caught = usePokemonStore((s) => s.caught);
   const caughtSet = new Set(caught.map((c) => c.name.toLowerCase()));
 
+  // Sound effects initialization
   useEffect(() => {
     windSoundRef.current = new Howl({
       src: ["/POKEMON-CATCHER/assets/wind.mp3"],
@@ -129,6 +146,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
     };
   }, []);
 
+  // Focus effect
   useEffect(() => {
     if (isFocused) {
       setEnableT(false);
@@ -154,6 +172,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
     }
   }, [isFocused]);
 
+  // Event handlers
   const handleTransitionEnd = () => {
     if (phase === "right") {
       setEnableT(false);
@@ -162,9 +181,6 @@ export const SearchInput: React.FC<SearchInputProps> = ({
     }
   };
 
-  const ballX =
-    phase === "inside" ? INSIDE_X : phase === "right" ? RIGHT_X : LEFT_X;
-
   const handleSelect = (name: string) => {
     if (selectWindSoundRef.current) {
       selectWindSoundRef.current.play();
@@ -172,8 +188,13 @@ export const SearchInput: React.FC<SearchInputProps> = ({
     onSelect(name);
   };
 
+  // Animation calculations
+  const ballX =
+    phase === "inside" ? INSIDE_X : phase === "right" ? RIGHT_X : LEFT_X;
+
   return (
     <div ref={containerRef} className="relative">
+      {/* Search input container */}
       <div
         className={`relative overflow-hidden rounded-full transition-shadow duration-200 ${
           isFocused
@@ -258,6 +279,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
         />
       </div>
 
+      {/* Suggestions container */}
       {searchTerm.trim() !== "" &&
         showSuggestions &&
         !listLoading &&
@@ -283,6 +305,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
           </div>
         )}
 
+      {/* No results message */}
       {searchTerm.trim() !== "" &&
         showSuggestions &&
         !listLoading &&

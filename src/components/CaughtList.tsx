@@ -3,13 +3,16 @@ import { usePokemonStore, CaughtEntry } from "../store/pokemonStore";
 import { Howl } from "howler";
 
 export const CaughtList: React.FC = () => {
+  // Store connections
   const caught = usePokemonStore((s) => s.caught);
   const removeOne = usePokemonStore((s) => s.removeOne);
 
+  // Sound effects initialization
   const deleteSound = new Howl({
     src: ["/POKEMON-CATCHER/assets/delete.mp3"],
   });
 
+  // Early return if no caught pokemon
   if (!caught.length) return null;
 
   return (
@@ -22,6 +25,7 @@ export const CaughtList: React.FC = () => {
                      shadow-[0_4px_12px_rgba(0,0,0,.35)] transition
                      hover:-translate-y-1 hover:shadow-[0_8px_18px_rgba(251,191,36,.35)]"
         >
+          {/* Count badge */}
           {p.count > 1 && (
             <span
               className="absolute -top-3 -left-3 rounded-full bg-accent-yellow px-3 pt-[10px] pb-[4px]
@@ -31,6 +35,7 @@ export const CaughtList: React.FC = () => {
             </span>
           )}
 
+          {/* Delete button */}
           <button
             onClick={() => {
               removeOne(p.id);
@@ -44,7 +49,9 @@ export const CaughtList: React.FC = () => {
             ×
           </button>
 
+          {/* Pokemon card content */}
           <div className="flex flex-col items-center px-6 py-8">
+            {/* Pokemon image */}
             <div className="relative mb-4 w-24 h-24">
               <img
                 src={p.sprites.front_default}
@@ -54,10 +61,11 @@ export const CaughtList: React.FC = () => {
               />
               <span
                 className="pointer-events-none absolute inset-0 rounded-full
-                               bg-gradient-to-br from-white/25 to-transparent"
+                           bg-gradient-to-br from-white/25 to-transparent"
               />
             </div>
 
+            {/* Pokemon name and stage */}
             <div className="text-center font-bold text-text-default">
               {p.name}
               <span className="block text-sm text-accent-yellow">
@@ -66,7 +74,11 @@ export const CaughtList: React.FC = () => {
             </div>
           </div>
 
-          <span className="pointer-events-none absolute inset-0 rounded-2xl ring-0 ring-accent-yellow/30 group-hover:ring-2 transition" />
+
+          <span
+            className="pointer-events-none absolute inset-0 rounded-2xl ring-0 
+                       ring-accent-yellow/30 group-hover:ring-2 transition"
+          />
         </div>
       ))}
     </div>

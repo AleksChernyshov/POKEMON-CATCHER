@@ -1,30 +1,39 @@
 import React, { useEffect, useState } from "react";
-import pokeball from "../assets/pokeball.png";
 import { usePokemonStore, Pokemon } from "../store/pokemonStore";
 import { usePokemonListStore } from "../store/pokemonListStore";
 import { Howl } from "howler";
 
+// Assets imports
+import pokeball from "../assets/pokeball.png";
+
+// Sound effects initialization
 const evoSound = new Howl({
   src: ["/POKEMON-CATCHER/assets/evo.mp3"],
   volume: 0.4,
 });
 
+// Types and interfaces
 interface Props {
   name: string;
   onCatch: (name: string) => void;
 }
 
 export const EvolutionModal: React.FC<Props> = ({ name, onCatch }) => {
-  const [loading, setLoading] = useState(true);
+  // Store connections
   const caught = usePokemonStore((s) => s.caught);
   const addPokemon = usePokemonStore((s) => s.addPokemon);
   const removeThree = usePokemonStore((s) => s.removeThree);
   const setEvolutionTarget = usePokemonStore((s) => s.setEvolutionTarget);
-
   const pokemonList = usePokemonListStore((s) => s.pokemons);
+
+  // State management
+  const [loading, setLoading] = useState(true);
+
+  // Pokemon data
   const currentPokemon = pokemonList.find((p) => p.name === name);
   const evolutionChain = currentPokemon?.evolutionChain || [];
 
+  // Loading effect
   useEffect(() => {
     const timer = setTimeout(() => {
       setLoading(false);
@@ -33,6 +42,7 @@ export const EvolutionModal: React.FC<Props> = ({ name, onCatch }) => {
     return () => clearTimeout(timer);
   }, []);
 
+  // Evolution handler
   const handleEvolution = (fromId: number, toId: number) => {
     const toPokemon = pokemonList.find((p) => p.id === toId);
     if (toPokemon) {
@@ -69,10 +79,12 @@ export const EvolutionModal: React.FC<Props> = ({ name, onCatch }) => {
         `,
       }}
     >
+      {/* Modal header */}
       <h2 className="mb-6 text-center text-2xl text-accent-yellow/80 uppercase tracking-wide drop-shadow-[0_0_10px_rgba(251,191,36,0.8)]">
         Evolution Chain
       </h2>
 
+      {/* Loading state */}
       {loading ? (
         <div className="flex h-[140px] items-center justify-center">
           <svg width="96" height="96" viewBox="0 0 64 64">
@@ -92,6 +104,7 @@ export const EvolutionModal: React.FC<Props> = ({ name, onCatch }) => {
         <p className="text-center text-text-default/90">No evolution data</p>
       ) : (
         <div className="flex items-center justify-center gap-4">
+          {/* Evolution chain */}
           {evolutionChain.map((p, i) => {
             const isCaught = caught.some((c) => c.name === p.name);
             const pokemonCount = caught.find((c) => c.id === p.id)?.count || 0;
@@ -100,6 +113,7 @@ export const EvolutionModal: React.FC<Props> = ({ name, onCatch }) => {
 
             return (
               <React.Fragment key={p.name}>
+                {/* Pokemon card */}
                 <div
                   className={[
                     "flex flex-col items-center gap-2 font-bold transition-all duration-300 group",
@@ -109,6 +123,7 @@ export const EvolutionModal: React.FC<Props> = ({ name, onCatch }) => {
                   ].join(" ")}
                 >
                   <div className="relative">
+                    {/* Pokemon image */}
                     <img
                       src={p.sprite}
                       alt={p.name}
@@ -117,6 +132,8 @@ export const EvolutionModal: React.FC<Props> = ({ name, onCatch }) => {
                         isCaught ? "" : "opacity-40 group-hover:opacity-100",
                       ].join(" ")}
                     />
+
+                    {/* Evolution button */}
                     {canEvolve && (
                       <button
                         onClick={() => {
@@ -130,6 +147,8 @@ export const EvolutionModal: React.FC<Props> = ({ name, onCatch }) => {
                         </span>
                       </button>
                     )}
+
+                    {/* Count badge */}
                     {isCaught && (
                       <span
                         className="absolute -top-2 -left-2 rounded-full bg-accent-yellow/80 px-2 pt-[8px] pb-[2px]
@@ -139,6 +158,8 @@ export const EvolutionModal: React.FC<Props> = ({ name, onCatch }) => {
                         ×{pokemonCount}
                       </span>
                     )}
+
+                    {/* Catch button */}
                     <button
                       onClick={() => onCatch(p.name)}
                       className="absolute -top-2 -right-4 rounded-full bg-accent-yellow/80 px-2 pt-[8px] pb-[2px]
@@ -149,6 +170,8 @@ export const EvolutionModal: React.FC<Props> = ({ name, onCatch }) => {
                       Catch
                     </button>
                   </div>
+
+                  {/* Pokemon name */}
                   <span
                     className={
                       isCaught ? "" : "group-hover:text-accent-yellow/80"
@@ -157,6 +180,8 @@ export const EvolutionModal: React.FC<Props> = ({ name, onCatch }) => {
                     {p.name}
                   </span>
                 </div>
+
+                {/* Evolution arrow */}
                 {i < evolutionChain.length - 1 && (
                   <span className="text-3xl text-accent-yellow/80 drop-shadow-[0_0_10px_rgba(251,191,36,1)]">
                     →

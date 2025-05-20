@@ -77,27 +77,15 @@ export const PokedexViewer: React.FC = () => {
 
   useEffect(() => {
     if (caught.length === 0) {
-      console.log("List is empty, resetting index to 0");
       setIdx(0);
       prevLen.current = 0;
       return;
     }
 
-    console.log("Current state:", {
-      currentIdx: idx,
-      currentPokemon: caught[idx],
-      caughtLength: caught.length,
-      prevLength: prevLen.current,
-      caughtPokemons: caught,
-      evolvedPokemonId,
-      lastCaughtId,
-    });
-
     // If we have an evolved pokemon, switch to it
     if (evolvedPokemonId !== null) {
       const evolvedIndex = caught.findIndex((p) => p.id === evolvedPokemonId);
       if (evolvedIndex !== -1) {
-        console.log("Found evolved pokemon at index:", evolvedIndex);
         setIdx(evolvedIndex);
         // Reset evolvedPokemonId after switching
         const store = usePokemonStore.getState();
@@ -111,7 +99,6 @@ export const PokedexViewer: React.FC = () => {
     if (lastCaughtId !== null) {
       const newIdx = caught.findIndex((p) => p.id === lastCaughtId);
       if (newIdx !== -1) {
-        console.log("New pokemon caught, setting index to:", newIdx);
         setIdx(newIdx);
         // Reset lastCaughtId after switching
         usePokemonStore.getState().lastCaughtId = null;
@@ -121,15 +108,14 @@ export const PokedexViewer: React.FC = () => {
 
     // If current index is out of bounds
     if (idx >= caught.length) {
-      console.log("Index out of bounds, setting to:", caught.length - 1);
       setIdx(caught.length - 1);
     }
+
     // If current pokemon was removed
     else if (caught.length < prevLen.current) {
       const currentPokemon = caught[idx];
       if (!currentPokemon) {
         const validIndex = Math.min(idx, caught.length - 1);
-        console.log("Invalid index, setting to:", validIndex);
         setIdx(validIndex);
         return;
       }
@@ -140,11 +126,9 @@ export const PokedexViewer: React.FC = () => {
       );
 
       if (samePokemonIndex !== -1) {
-        console.log("Found same pokemon at index:", samePokemonIndex);
         setIdx(samePokemonIndex);
       } else {
         const validIndex = Math.min(idx, caught.length - 1);
-        console.log("No pokemon found, staying at:", validIndex);
         setIdx(validIndex);
       }
     }

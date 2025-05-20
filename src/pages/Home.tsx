@@ -8,18 +8,25 @@ import React, {
 } from "react";
 import { SearchInput, Suggestion } from "../components/SearchInput";
 import { CatchModal } from "../components/CatchModal";
-import { usePokemonStore } from "../store/pokemonStore";
-import { usePokemonListStore } from "../store/pokemonListStore";
 import { PokedexViewer } from "../components/PokedexViewer";
 import { LoadingScreen } from "../components/LoadingScreen";
+import { usePokemonStore } from "../store/pokemonStore";
+import { usePokemonListStore } from "../store/pokemonListStore";
+
+// Assets imports
 import pikaGif from "../assets/pika.gif";
 
 const Home: React.FC = () => {
+  // Refs
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // State management
   const [searchTerm, setSearchTerm] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selected, setSelected] = useState<Suggestion | null>(null);
 
+  // Store connections
   const {
     pokemons,
     isLoading: listLoading,
@@ -27,6 +34,7 @@ const Home: React.FC = () => {
   } = usePokemonListStore();
   const addPokemon = usePokemonStore((s) => s.addPokemon);
 
+  // Filtered suggestions
   const suggestions = useMemo(() => {
     const lower = searchTerm?.trim()?.toLowerCase() || "";
     return pokemons
@@ -42,6 +50,7 @@ const Home: React.FC = () => {
       }));
   }, [pokemons, searchTerm]);
 
+  // Event handlers
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
     if (e.target.value.trim() !== "") {
@@ -64,8 +73,7 @@ const Home: React.FC = () => {
     setSearchTerm("");
   };
 
-  const containerRef = useRef<HTMLDivElement>(null);
-
+  // Click outside effect
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
@@ -86,6 +94,7 @@ const Home: React.FC = () => {
     }
   }, [showSuggestions]);
 
+  // Loading app
   if (listLoading || !isFullyLoaded || !pokemons?.length) {
     return <LoadingScreen />;
   }
@@ -96,10 +105,12 @@ const Home: React.FC = () => {
         ref={containerRef}
         className="container mx-auto text-center max-w-3xl"
       >
+
         <h1 className="text-5xl font-bold text-accent-yellow mb-12">
           Pokémon Catcher
         </h1>
 
+        {/* Search section */}
         <div className="mx-auto max-w-md">
           <SearchInput
             searchTerm={searchTerm}
@@ -125,6 +136,7 @@ const Home: React.FC = () => {
           />
         </div>
 
+        {/* Catch modal */}
         {selected && (
           <CatchModal
             name={selected.name}
@@ -139,9 +151,11 @@ const Home: React.FC = () => {
           className="absolute bottom-0 left-0 w-[200px]"
         />
 
+        {/* Pokedex viewer */}
         <PokedexViewer />
       </div>
     </div>
   );
 };
+
 export default Home;
