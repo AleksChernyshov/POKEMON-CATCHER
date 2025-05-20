@@ -91,11 +91,17 @@ export const usePokemonStore = create<PokemonStore>()(
               ...s,
               caught: s.caught.map(c =>
                 c.id === id ? { ...c, count: c.count - 1 } : c
-              )
+              ),
+              lastCaughtId: s.lastCaughtId
             }
+          // If this is the last copy, remove it and update lastCaughtId
+          const newCaught = s.caught.filter(c => c.id !== id)
+          const nextIndex = s.caught.findIndex(c => c.id === id) + 1
+          const nextPokemon = nextIndex < s.caught.length ? s.caught[nextIndex] : s.caught[0]
           return {
             ...s,
-            caught: s.caught.filter(c => c.id !== id)
+            caught: newCaught,
+            lastCaughtId: newCaught.length > 0 ? nextPokemon?.id || newCaught[0].id : null
           }
         }),
 

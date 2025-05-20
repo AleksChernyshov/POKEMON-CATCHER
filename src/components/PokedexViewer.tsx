@@ -71,28 +71,82 @@ export const PokedexViewer: React.FC = () => {
   }, [showAll]);
 
   // Pokemon selection and list management
+  const has = caught.length > 0;
+  const cur: CaughtEntry | null = has ? caught[idx] : null;
+
   useEffect(() => {
-    if (lastCaughtId !== null) {
+    if (caught.length === 0) {
+      setIdx(0);
+      return;
+    }
+
+    console.log("Current state:", {
+      currentIdx: idx,
+      currentPokemon: caught[idx],
+      caughtLength: caught.length,
+      prevLength: prevLen.current,
+      caughtPokemons: caught,
+    });
+
+    // If we added a new pokemon
+    if (caught.length > prevLen.current) {
+      console.log("New pokemon added, setting index to:", caught.length - 1);
+      setIdx(caught.length - 1);
+    }
+    // If current index is out of bounds
+    else if (idx >= caught.length) {
+      console.log("Index out of bounds, setting to:", caught.length - 1);
+      setIdx(caught.length - 1);
+    }
+    // If current pokemon was removed
+    else if (caught.length < prevLen.current) {
+      const currentPokemon = caught[idx];
+      if (!currentPokemon) {
+        const validIndex = Math.min(idx, caught.length - 1);
+        console.log("Invalid index, setting to:", validIndex);
+        setIdx(validIndex);
+        return;
+      }
+
+      // Try to find the same pokemon in the new list
+      const samePokemonIndex = caught.findIndex(
+        (p) => p.id === currentPokemon.id && p.stage === currentPokemon.stage
+      );
+
+      if (samePokemonIndex !== -1) {
+        console.log("Found same pokemon at index:", samePokemonIndex);
+        setIdx(samePokemonIndex);
+      } else {
+        // If we can't find the same pokemon, try to find by lastCaughtId
+        if (lastCaughtId !== null) {
+          const newIdx = caught.findIndex((p) => p.id === lastCaughtId);
+          if (newIdx !== -1) {
+            console.log("Found pokemon by lastCaughtId at index:", newIdx);
+            setIdx(newIdx);
+            return;
+          }
+        }
+        // If all else fails, stay at the current index if valid
+        const validIndex = Math.min(idx, caught.length - 1);
+        console.log("No pokemon found, staying at:", validIndex);
+        setIdx(validIndex);
+      }
+    }
+
+    prevLen.current = caught.length;
+  }, [caught, idx]);
+
+  // Separate effect for handling lastCaughtId changes (only for new catches)
+  useEffect(() => {
+    if (lastCaughtId !== null && caught.length > prevLen.current) {
       const newIdx = caught.findIndex((p) => p.id === lastCaughtId);
       if (newIdx !== -1) {
+        console.log("New pokemon caught, setting index to:", newIdx);
         setIdx(newIdx);
       }
     }
   }, [lastCaughtId, caught]);
 
-  useEffect(() => {
-    if (caught.length > prevLen.current) {
-      setIdx(caught.length - 1);
-    } else if (idx >= caught.length && caught.length > 0) {
-      setIdx(caught.length - 1);
-    } else if (caught.length === 0) {
-      setIdx(0);
-    }
-    prevLen.current = caught.length;
-  }, [caught.length, idx]);
-
-  const has = caught.length > 0;
-  const cur: CaughtEntry | null = has ? caught[idx] : null;
   const disabled = power && has ? "" : "pointer-events-none opacity-40";
 
   // Navigation handlers
