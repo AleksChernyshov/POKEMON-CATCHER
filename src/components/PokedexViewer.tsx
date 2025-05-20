@@ -15,6 +15,7 @@ export const PokedexViewer: React.FC = () => {
   // Store connections for Pokemon management
   const caught = usePokemonStore((s) => s.caught);
   const lastCaughtId = usePokemonStore((s) => s.lastCaughtId);
+  const evolvedPokemonId = usePokemonStore((s) => s.evolvedPokemonId);
   const removeOne = usePokemonStore((s) => s.removeOne);
   const addPokemon = usePokemonStore((s) => s.addPokemon);
 
@@ -76,7 +77,9 @@ export const PokedexViewer: React.FC = () => {
 
   useEffect(() => {
     if (caught.length === 0) {
+      console.log("List is empty, resetting index to 0");
       setIdx(0);
+      prevLen.current = 0;
       return;
     }
 
@@ -86,15 +89,38 @@ export const PokedexViewer: React.FC = () => {
       caughtLength: caught.length,
       prevLength: prevLen.current,
       caughtPokemons: caught,
+      evolvedPokemonId,
+      lastCaughtId,
     });
 
-    // If we added a new pokemon
-    if (caught.length > prevLen.current) {
-      console.log("New pokemon added, setting index to:", caught.length - 1);
-      setIdx(caught.length - 1);
+    // If we have an evolved pokemon, switch to it
+    if (evolvedPokemonId !== null) {
+      const evolvedIndex = caught.findIndex((p) => p.id === evolvedPokemonId);
+      if (evolvedIndex !== -1) {
+        console.log("Found evolved pokemon at index:", evolvedIndex);
+        setIdx(evolvedIndex);
+        // Reset evolvedPokemonId after switching
+        const store = usePokemonStore.getState();
+        store.evolvedPokemonId = null;
+        store.lastCaughtId = null;
+        return;
+      }
     }
+
+    // If we caught a pokemon (new or copy)
+    if (lastCaughtId !== null) {
+      const newIdx = caught.findIndex((p) => p.id === lastCaughtId);
+      if (newIdx !== -1) {
+        console.log("New pokemon caught, setting index to:", newIdx);
+        setIdx(newIdx);
+        // Reset lastCaughtId after switching
+        usePokemonStore.getState().lastCaughtId = null;
+        return;
+      }
+    }
+
     // If current index is out of bounds
-    else if (idx >= caught.length) {
+    if (idx >= caught.length) {
       console.log("Index out of bounds, setting to:", caught.length - 1);
       setIdx(caught.length - 1);
     }
@@ -117,16 +143,6 @@ export const PokedexViewer: React.FC = () => {
         console.log("Found same pokemon at index:", samePokemonIndex);
         setIdx(samePokemonIndex);
       } else {
-        // If we can't find the same pokemon, try to find by lastCaughtId
-        if (lastCaughtId !== null) {
-          const newIdx = caught.findIndex((p) => p.id === lastCaughtId);
-          if (newIdx !== -1) {
-            console.log("Found pokemon by lastCaughtId at index:", newIdx);
-            setIdx(newIdx);
-            return;
-          }
-        }
-        // If all else fails, stay at the current index if valid
         const validIndex = Math.min(idx, caught.length - 1);
         console.log("No pokemon found, staying at:", validIndex);
         setIdx(validIndex);
@@ -134,18 +150,7 @@ export const PokedexViewer: React.FC = () => {
     }
 
     prevLen.current = caught.length;
-  }, [caught, idx]);
-
-  // Separate effect for handling lastCaughtId changes (only for new catches)
-  useEffect(() => {
-    if (lastCaughtId !== null && caught.length > prevLen.current) {
-      const newIdx = caught.findIndex((p) => p.id === lastCaughtId);
-      if (newIdx !== -1) {
-        console.log("New pokemon caught, setting index to:", newIdx);
-        setIdx(newIdx);
-      }
-    }
-  }, [lastCaughtId, caught]);
+  }, [caught, idx, evolvedPokemonId, lastCaughtId]);
 
   const disabled = power && has ? "" : "pointer-events-none opacity-40";
 
@@ -154,12 +159,20 @@ export const PokedexViewer: React.FC = () => {
     if (power && has) {
       setIdx((i) => (i ? i - 1 : caught.length - 1));
       buttonClickSound.play();
+      // Reset both evolvedPokemonId and lastCaughtId when manually navigating
+      const store = usePokemonStore.getState();
+      store.evolvedPokemonId = null;
+      store.lastCaughtId = null;
     }
   };
   const next = () => {
     if (power && has) {
       setIdx((i) => (i === caught.length - 1 ? 0 : i + 1));
       buttonClickSound.play();
+      // Reset both evolvedPokemonId and lastCaughtId when manually navigating
+      const store = usePokemonStore.getState();
+      store.evolvedPokemonId = null;
+      store.lastCaughtId = null;
     }
   };
 
