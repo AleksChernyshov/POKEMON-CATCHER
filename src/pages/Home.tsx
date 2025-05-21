@@ -6,15 +6,16 @@ import React, {
   useRef,
   useMemo,
 } from "react";
-import { SearchInput, Suggestion } from "../components/SearchInput";
-import { CatchModal } from "../components/CatchModal";
-import { PokedexViewer } from "../components/PokedexViewer";
-import { LoadingScreen } from "../components/LoadingScreen";
+import { SearchInput, Suggestion } from "../components/search/SearchInput";
+
 import { usePokemonStore } from "../store/pokemonStore";
 import { usePokemonListStore } from "../store/pokemonListStore";
 
 // Assets imports
 import pikaGif from "../assets/pika.gif";
+import { LoadingScreen } from "../components/ui/LoadingScreen";
+import { CatchModal } from "../components/pokemon/CatchModal";
+import { PokedexViewer } from "../components/pokedex/PokedexViewer";
 
 const Home: React.FC = () => {
   // Refs
@@ -105,7 +106,6 @@ const Home: React.FC = () => {
         ref={containerRef}
         className="container mx-auto text-center max-w-3xl"
       >
-
         <h1 className="text-5xl font-bold text-accent-yellow mb-12">
           Pokémon Catcher
         </h1>

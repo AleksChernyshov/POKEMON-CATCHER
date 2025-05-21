@@ -5,14 +5,10 @@ import React, {
   useEffect,
   useState,
 } from "react";
-import { usePokemonStore } from "../store/pokemonStore";
-import { usePokemonListStore } from "../store/pokemonListStore";
 import { Howl } from "howler";
-
-// Assets imports
-import pokeball from "../assets/pokeball.png";
-import particles from "../assets/particles_bg.png";
-import caughtBadge from "../assets/CAUGHT.png";
+import { useCaughtSet } from "../../store/selectors";
+import { SuggestionCard } from "./SuggestionCard";
+import { SearchAnimation } from "./SearchAnimation";
 
 // Types and interfaces
 export interface Suggestion {
@@ -43,60 +39,6 @@ const LEFT_X = -70;
 const INSIDE_X = 10;
 const RIGHT_X = 600;
 
-// Suggestion card component
-const SuggestionCard: React.FC<{
-  p: Suggestion;
-  caught: boolean;
-  onSelect: (n: string) => void;
-}> = ({ p, caught, onSelect }) => {
-  // Store connections
-  const pokemon = usePokemonListStore((state) =>
-    state.pokemons.find((pok) => pok.id === p.id)
-  );
-
-  // Pokemon data
-  const catchChance = pokemon?.catchChance ?? 0.9;
-  const chanceLabel = `${Math.round(catchChance * 100)}%`;
-
-  return (
-    <div
-      onClick={() => onSelect(p.name)}
-      className="relative group cursor-pointer bg-bg-secondary rounded-lg p-2 flex flex-col items-center
-                 border-2 border-transparent transition duration-200
-                 hover:border-accent-orange hover:shadow-[0_0_10px_rgba(251,191,36,0.9)]"
-    >
-      {/* Catch chance badge */}
-      <span className="absolute top-1 right-1 bg-accent-yellow text-black text-xs font-bold px-2 pb-1 pt-2 rounded-full">
-        {chanceLabel}
-      </span>
-
-      {/* Pokemon image */}
-      <img
-        src={p.image}
-        alt={p.name}
-        loading="lazy"
-        className={`relative z-10 w-32 h-32 object-contain mb-1 transition-transform duration-200
-                    group-hover:scale-[130%]`}
-      />
-
-      {/* Caught badge overlay */}
-      {caught && (
-        <img
-          src={caughtBadge}
-          alt="caught"
-          className="absolute inset-0 z-20 w-full h-full object-contain pointer-events-none px-4
-                     opacity-90 transition-opacity duration-150 group-hover:opacity-0"
-        />
-      )}
-
-      {/* Pokemon name */}
-      <span className="text-text-default group-hover:text-accent-yellow transition-colors duration-150">
-        {p.name}
-      </span>
-    </div>
-  );
-};
-
 export const SearchInput: React.FC<SearchInputProps> = ({
   searchTerm,
   isFocused,
@@ -120,8 +62,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
   const [enableT, setEnableT] = useState(false);
 
   // Store connections
-  const caught = usePokemonStore((s) => s.caught);
-  const caughtSet = new Set(caught.map((c) => c.name.toLowerCase()));
+  const caughtSet = useCaughtSet();
 
   // Sound effects initialization
   useEffect(() => {
@@ -202,63 +143,13 @@ export const SearchInput: React.FC<SearchInputProps> = ({
             : "shadow-[0_0_10px_rgba(251,191,36,0.5)]"
         }`}
       >
-        {isFocused && (
-          <svg
-            viewBox="0 0 400 40"
-            className="absolute inset-0 w-full h-full pointer-events-none z-30"
-            preserveAspectRatio="none"
-          >
-            <defs>
-              <clipPath id="clipCapsule">
-                <rect width="400" height="40" rx="20" ry="20" />
-              </clipPath>
-            </defs>
-            <g clipPath="url(#clipCapsule)">
-              <image href={particles} width="400" height="40">
-                <animateTransform
-                  attributeName="transform"
-                  type="translate"
-                  from="0 0"
-                  to="-400 0"
-                  dur="0.4s"
-                  repeatCount="indefinite"
-                />
-              </image>
-              <image href={particles} x="400" width="400" height="40">
-                <animateTransform
-                  attributeName="transform"
-                  type="translate"
-                  from="0 0"
-                  to="-400 0"
-                  dur="0.4s"
-                  repeatCount="indefinite"
-                />
-              </image>
-            </g>
-          </svg>
-        )}
-
-        <div
-          className="absolute top-1/2 pointer-events-none z-40"
-          style={{
-            transform: `translateY(-50%) translateX(${ballX}px)`,
-            transition: enableT ? `transform ${duration}ms ease-out` : "none",
-          }}
+        <SearchAnimation
+          isFocused={isFocused}
+          ballX={ballX}
+          enableT={enableT}
+          duration={duration}
           onTransitionEnd={handleTransitionEnd}
-        >
-          <svg width="64" height="64" viewBox="0 0 64 64">
-            <image href={pokeball} width="64" height="64">
-              <animateTransform
-                attributeName="transform"
-                type="rotate"
-                from="0 32 32"
-                to="360 32 32"
-                dur="0.3s"
-                repeatCount="indefinite"
-              />
-            </image>
-          </svg>
-        </div>
+        />
 
         <input
           type="text"
@@ -296,7 +187,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
               {suggestions.map((p) => (
                 <SuggestionCard
                   key={p.id}
-                  p={p}
+                  pokemon={p}
                   caught={caughtSet.has(p.name.toLowerCase())}
                   onSelect={handleSelect}
                 />

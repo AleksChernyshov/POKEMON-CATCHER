@@ -17,7 +17,6 @@ export const useLoadPokemonList = () => {
     setLoading(true)
   }, [setLoading])
 
-  // Handle errors
   useEffect(() => {
     if (error) {
       setError(error.message)

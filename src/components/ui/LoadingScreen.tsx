@@ -1,7 +1,14 @@
 import React, { useEffect, useState } from "react";
+import { ProgressBar } from "./ProgressBar";
 
 // Assets imports
-import catchThePokemon from "../assets/catch-the-pokemon.png";
+import catchThePokemon from "../../assets/catch-the-pokemon.png";
+
+// Constants
+const LOADING_TEXT = {
+  title: "Loading Pokédex...",
+  description: "Please wait while we gather information about all Pokémon",
+} as const;
 
 export const LoadingScreen: React.FC = () => {
   // State management
@@ -39,20 +46,11 @@ export const LoadingScreen: React.FC = () => {
         </div>
 
         {/* Progress bar */}
-        <div className="-mt-[50px]">
-          <div className="w-full bg-bg-secondary rounded-full h-4 mb-4">
-            <div
-              className="bg-accent-yellow h-4 rounded-full transition-all duration-300 ease-out"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <h2 className="text-2xl font-bold text-accent-yellow mb-2">
-            Loading Pokédex...
-          </h2>
-          <p className="text-text-default">
-            Please wait while we gather information about all Pokémon
-          </p>
-        </div>
+        <ProgressBar
+          progress={progress}
+          title={LOADING_TEXT.title}
+          description={LOADING_TEXT.description}
+        />
       </div>
     </div>
   );

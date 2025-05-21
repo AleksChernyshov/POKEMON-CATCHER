@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { useCatchPokemon } from "../hooks/useCatchPokemon";
-import { Pokemon } from "../store/pokemonStore";
-import { usePokemonListStore } from "../store/pokemonListStore";
+import { useCaughtPokemon } from "../../store/selectors";
+import { usePokemonList } from "../../store/selectors";
+import { Pokemon } from "../../store/pokemonStore";
 import { Howl } from "howler";
+import { useCatchPokemon } from "../../hooks/useCatchPokemon";
 
 // Assets imports
-import catch1 from "../assets/catching-1.gif";
-import catch2 from "../assets/catching-2.gif";
-import catch3 from "../assets/catching-3.gif";
-import catch4 from "../assets/catching-4.gif";
-import catch5 from "../assets/catching-5.png";
+import catch1 from "../../assets/catching-1.gif";
+import catch2 from "../../assets/catching-2.gif";
+import catch3 from "../../assets/catching-3.gif";
+import catch4 from "../../assets/catching-4.gif";
+import catch5 from "../../assets/catching-5.png";
 
 // Sound effects initialization
 const wowSounds = [
@@ -44,8 +45,9 @@ export const CatchModal: React.FC<CatchModalProps> = ({
 }) => {
   // Store connections
   const { attemptCatch } = useCatchPokemon();
-  const pokemonFromStore = usePokemonListStore((state) =>
-    state.pokemons.find((p) => p.name.toLowerCase() === name.toLowerCase())
+  const pokemons = usePokemonList();
+  const pokemonFromStore = pokemons.find(
+    (p) => p.name.toLowerCase() === name.toLowerCase()
   );
 
   // State management
