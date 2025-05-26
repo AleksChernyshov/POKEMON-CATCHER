@@ -1,5 +1,5 @@
 import React from "react";
-import { CaughtEntry } from "../store/pokemonStore";
+import { CaughtEntry } from "../../store/pokemonStore";
 import { Howl } from "howler";
 
 interface PokemonCardProps {

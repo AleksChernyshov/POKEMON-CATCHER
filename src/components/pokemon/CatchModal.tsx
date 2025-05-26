@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useCaughtPokemon } from "../../store/selectors";
 import { usePokemonList } from "../../store/selectors";
 import { Pokemon } from "../../store/pokemonStore";
 import { Howl } from "howler";

@@ -92,9 +92,7 @@ export const PokedexViewer: React.FC = () => {
 
     // If we have an evolved pokemon, switch to it
     if (evolvedPokemonId !== null) {
-      const evolvedIndex = caught.findIndex(
-        (p: CaughtEntry) => p.id === evolvedPokemonId
-      );
+      const evolvedIndex = caught.findIndex((p) => p.id === evolvedPokemonId);
       if (evolvedIndex !== -1) {
         setIdx(evolvedIndex);
         // Reset evolvedPokemonId after switching
@@ -107,9 +105,7 @@ export const PokedexViewer: React.FC = () => {
 
     // If we caught a pokemon (new or copy)
     if (lastCaughtId !== null) {
-      const newIdx = caught.findIndex(
-        (p: CaughtEntry) => p.id === lastCaughtId
-      );
+      const newIdx = caught.findIndex((p) => p.id === lastCaughtId);
       if (newIdx !== -1) {
         setIdx(newIdx);
         // Reset lastCaughtId after switching
@@ -134,8 +130,7 @@ export const PokedexViewer: React.FC = () => {
 
       // Try to find the same pokemon in the new list
       const samePokemonIndex = caught.findIndex(
-        (p: CaughtEntry) =>
-          p.id === currentPokemon.id && p.stage === currentPokemon.stage
+        (p) => p.id === currentPokemon.id && p.stage === currentPokemon.stage
       );
 
       if (samePokemonIndex !== -1) {
@@ -184,7 +179,7 @@ export const PokedexViewer: React.FC = () => {
   };
 
   const togglePower = () => {
-    setPower((p: boolean) => {
+    setPower((p) => {
       const n = !p;
       if (n) powerOnSound.play();
       else powerOffSound.play();
